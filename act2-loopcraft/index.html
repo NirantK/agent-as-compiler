@@ -308,6 +308,9 @@
   .s-split .split-lead { font-family: 'Hanken Grotesk', sans-serif; font-size: clamp(14px, 1.02vw, 18px); line-height: 1.5; color: var(--ink); max-width: 96ch; margin: clamp(14px, 2vh, 26px) 0 0; }
   .s-close .close-title { font-family: 'Newsreader', Georgia, serif; font-weight: 400; font-size: clamp(56px, min(7vw, 12vh), 150px); line-height: 0.98; letter-spacing: -0.005em; color: var(--paper); margin: clamp(8px,1.4vh,18px) 0 0; }
   .s-close .close-tagline { font-family: 'Newsreader', Georgia, serif; font-style: italic; font-size: clamp(22px, 2.4vw, 40px); color: #E6B450; margin-top: clamp(14px,2vh,28px); }
+  .s-split .pdiag { width: 100%; max-width: clamp(180px, 16vw, 240px); height: auto; margin: clamp(12px, 1.6vh, 20px) 0 0; align-self: flex-start; }
+  .s-split .pdiag text { font-family: 'DM Mono', ui-monospace, monospace; font-size: 11px; fill: var(--ink); text-anchor: middle; }
+  .s-split .pdiag .flow { stroke-dasharray: 5 4; animation: lpflow 1.5s linear infinite; }
 </style>
 </head>
 <body>
@@ -486,17 +489,54 @@
           <div class="lab-tag caption">Compilers are DAGs</div>
         </div>
         <div class="split-lead">A compiler is a directed graph of passes, a fixed workflow. A coding harness runs the model and the real language compiler in one tight loop. A skill adds an edge to that graph at runtime: a registered tool, disclosed only when the model needs it, saved as markdown and code.</div>
+        <svg class="pd-defs" width="0" height="0" aria-hidden="true" style="position:absolute">
+          <defs>
+            <marker id="pd-ink" markerWidth="8" markerHeight="8" refX="5" refY="2.6" orient="auto"><path d="M0,0 L5.5,2.6 L0,5.2 Z" fill="#1F2BE0"/></marker>
+            <marker id="pd-amb" markerWidth="8" markerHeight="8" refX="5" refY="2.6" orient="auto"><path d="M0,0 L5.5,2.6 L0,5.2 Z" fill="#B07814"/></marker>
+          </defs>
+        </svg>
         <div class="split-body">
           <div class="panel">
             <div class="ptag caption">Dynamic edge</div>
             <div class="phead">Use a skill.</div>
-            <div class="pbody">The model adds the edge when it needs it, so one harness stretches across many kinds of work.</div>
+            <div class="pbody">The model adds the edge only when it needs it. Progressive disclosure keeps it cheap until the skill fires, so one harness covers many kinds of work.</div>
+            <svg class="pdiag" viewBox="0 0 340 150" fill="none" aria-label="A workflow with a skill attached as a dynamic edge at runtime">
+              <g stroke="#1F2BE0" stroke-width="1.8">
+                <rect x="14" y="94" width="80" height="34" rx="3" fill="rgba(31,43,224,0.06)"/>
+                <rect x="130" y="94" width="80" height="34" rx="3" fill="rgba(31,43,224,0.06)"/>
+                <rect x="246" y="94" width="80" height="34" rx="3" fill="rgba(31,43,224,0.06)"/>
+                <line x1="94" y1="111" x2="128" y2="111" marker-end="url(#pd-ink)"/>
+                <line x1="210" y1="111" x2="244" y2="111" marker-end="url(#pd-ink)"/>
+              </g>
+              <rect x="130" y="14" width="80" height="32" rx="3" fill="rgba(176,120,20,0.10)" stroke="#B07814" stroke-width="1.8"/>
+              <path class="flow" d="M158 94 L158 48" stroke="#B07814" stroke-width="1.8" marker-end="url(#pd-amb)"/>
+              <path class="flow" d="M182 46 L182 92" stroke="#B07814" stroke-width="1.8" marker-end="url(#pd-amb)"/>
+              <text x="54" y="115">in</text>
+              <text x="170" y="115">run</text>
+              <text x="286" y="115">out</text>
+              <text x="170" y="34" fill="#B07814">skill</text>
+            </svg>
             <div class="pfoot caption">General. Worth it when the work varies.</div>
           </div>
           <div class="panel">
             <div class="ptag caption">Static edge</div>
             <div class="phead">Make it native.</div>
-            <div class="pbody">Wire the edge into the harness yourself. The model makes no choice, so the output does not vary.</div>
+            <div class="pbody">Wire the edge into the harness as plain code, always on. The model makes no choice, so the same input runs the same way every time.</div>
+            <svg class="pdiag" viewBox="0 0 340 150" fill="none" aria-label="A workflow with the capability wired in as a static edge">
+              <g stroke="#1F2BE0" stroke-width="1.8">
+                <rect x="8" y="58" width="62" height="34" rx="3" fill="rgba(31,43,224,0.06)"/>
+                <rect x="94" y="58" width="62" height="34" rx="3" fill="rgba(31,43,224,0.06)"/>
+                <rect x="180" y="58" width="76" height="34" rx="3" fill="rgba(31,43,224,0.16)"/>
+                <rect x="280" y="58" width="54" height="34" rx="3" fill="rgba(31,43,224,0.06)"/>
+                <line x1="70" y1="75" x2="92" y2="75" marker-end="url(#pd-ink)"/>
+                <line x1="156" y1="75" x2="178" y2="75" marker-end="url(#pd-ink)"/>
+                <line x1="256" y1="75" x2="278" y2="75" marker-end="url(#pd-ink)"/>
+              </g>
+              <text x="39" y="79">in</text>
+              <text x="125" y="79">run</text>
+              <text x="218" y="79" font-weight="700">native</text>
+              <text x="307" y="79">out</text>
+            </svg>
             <div class="pfoot caption">Reliable. Worth it for a fixed workload.</div>
           </div>
         </div>
