@@ -58,9 +58,12 @@ EXTRA_CSS = """
   .s-about .cred { margin-top: clamp(16px, 2.2vh, 30px); padding-top: clamp(12px, 1.6vh, 20px); border-top: 1.5px solid var(--ink); display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px clamp(16px, 2vw, 32px); }
   .s-about .cred .cred-lab { font-family: 'Hanken Grotesk', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em; font-size: clamp(11px, 0.82vw, 13px); color: var(--ink); opacity: 0.6; }
   .s-about .cred .ci { font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(11px, 0.86vw, 14px); color: var(--ink); }
-  .s-about .about-fig { margin-top: auto; display: flex; flex-direction: column; align-items: flex-end; gap: clamp(6px, 1vh, 12px); }
-  .s-about .about-fig img { max-height: 30vh; max-width: 46%; object-fit: contain; border: 1.5px solid var(--ink); border-radius: 3px; display: block; }
-  .s-about .about-cap { font-family: 'Hanken Grotesk', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; font-size: clamp(10px, 0.78vw, 13px); color: var(--ink); opacity: 0.55; }
+  .s-about .about-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 1.4fr 0.6fr; gap: clamp(26px, 3.2vw, 64px); align-items: stretch; margin-top: clamp(14px, 2vh, 28px); }
+  .s-about .about-main { display: flex; flex-direction: column; min-height: 0; justify-content: center; }
+  .s-about .about-main .about-lead { margin-top: 0; }
+  .s-about .about-fig { display: flex; flex-direction: column; min-height: 0; gap: clamp(8px, 1.2vh, 14px); }
+  .s-about .about-fig img { flex: 1; min-height: 0; width: 100%; object-fit: cover; object-position: 46% 26%; border: 1.5px solid var(--ink); border-radius: 3px; display: block; }
+  .s-about .about-cap { font-family: 'Hanken Grotesk', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; font-size: clamp(10px, 0.78vw, 13px); color: var(--ink); opacity: 0.55; text-align: right; }
 
   /* opening cobalt: color overrides LAST so they beat the .s-open base rules */
   .s-open .oeyebrow, .s-open .otitle, .s-open .osub, .s-open .oname { color: var(--paper); }
@@ -100,21 +103,25 @@ ABOUT_SLIDE = """
           <div class="h">I'm Nirant.</div>
           <div class="lab-tag caption">Scaled Focus</div>
         </div>
-        <div class="about-lead">We help agent companies build better agent harnesses.</div>
-        <div class="timeline">
-          <div class="trow"><div class="yr">2025</div><div class="tt">Helped Ragas modernize. Ran search evals with Littlebird.ai.</div></div>
-          <div class="trow"><div class="yr">2026</div><div class="tt">Helped Kavana cut costs 40% with caching, at 1M chats a day. LiteLLM contributors.</div></div>
-          <div class="trow"><div class="yr">Now</div><div class="tt">Optimizing a presentations harness to 10 cents a deck.</div></div>
-        </div>
-        <div class="cred">
-          <span class="cred-lab">Earlier</span>
-          <span class="ci">Author, "NLP in Python", 5,000+ copies</span>
-          <span class="ci">Built FastEmbed, used by NVIDIA Nemo Guardrails and 3,000+ repos</span>
-          <span class="ci">Top 5 GenAI Scientists in India, 2023</span>
-        </div>
-        <div class="about-fig">
-          <img src="about-frame.jpg" alt="Nirant presenting NLP for Indic Languages at Wingify DevFest 2018" />
-          <div class="about-cap">NLP for Indic Languages, Wingify DevFest 2018</div>
+        <div class="about-body">
+          <div class="about-main">
+            <div class="about-lead">We help agent companies build better agent harnesses.</div>
+            <div class="timeline">
+              <div class="trow"><div class="yr">2025</div><div class="tt">Helped Ragas modernize. Ran search evals with Littlebird.ai.</div></div>
+              <div class="trow"><div class="yr">2026</div><div class="tt">Helped Kavana cut costs 40% with caching, at 1M chats a day. LiteLLM contributors.</div></div>
+              <div class="trow"><div class="yr">Now</div><div class="tt">Optimizing a presentations harness to 10 cents a deck.</div></div>
+            </div>
+            <div class="cred">
+              <span class="cred-lab">Earlier</span>
+              <span class="ci">Author, "NLP in Python", 5,000+ copies</span>
+              <span class="ci">Built FastEmbed, used by NVIDIA Nemo Guardrails and 3,000+ repos</span>
+              <span class="ci">Top 5 GenAI Scientists in India, 2023</span>
+            </div>
+          </div>
+          <div class="about-fig">
+            <img src="about-frame.jpg" alt="Nirant presenting NLP for Indic Languages at Wingify DevFest 2018" />
+            <div class="about-cap">NLP for Indic Languages, Wingify DevFest 2018</div>
+          </div>
         </div>
       </div>
       <div class="pagenum">Act I</div>
@@ -142,6 +149,7 @@ DIVIDER_ACT2 = """
         <h2 class="dtitle">Coding Agents<br/>are Compilers.</h2>
         <div class="dsub">With general models, coding agents combine to show convergent behaviour.</div>
       </div>
+      <div class="pagenum"></div>
     </section>
 """
 
@@ -216,9 +224,34 @@ OVERLAY_JS = """
 </script>
 """
 
+POLICY_SLIDE = """
+    <!-- ACT I — CODE IS THE POLICY -->
+    <section class="slide s-chapter hairlines">
+      <div class="pixel-glitch" aria-hidden="true">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+          <defs><pattern id="vsPolicy" width="2.4" height="100" patternUnits="userSpaceOnUse"><line x1="0.5" y1="0" x2="0.5" y2="100" stroke="#1F2BE0" stroke-width="1.0"/></pattern></defs>
+          <rect x="36" y="0" width="38" height="14" fill="url(#vsPolicy)"/>
+          <rect x="22" y="14" width="50" height="12" fill="url(#vsPolicy)"/>
+          <rect x="34" y="26" width="46" height="11" fill="url(#vsPolicy)"/>
+          <rect x="16" y="37" width="60" height="13" fill="url(#vsPolicy)"/>
+          <rect x="28" y="50" width="48" height="11" fill="url(#vsPolicy)"/>
+          <rect x="18" y="61" width="62" height="14" fill="url(#vsPolicy)"/>
+          <rect x="34" y="75" width="44" height="12" fill="url(#vsPolicy)"/>
+          <rect x="22" y="87" width="50" height="13" fill="url(#vsPolicy)"/>
+        </svg>
+      </div>
+      <div class="frame">
+        <div class="nm-tag">Reinforcement learning, in one line</div>
+        <div class="ttl">Code is the policy.</div>
+        <div class="lede">The harness is just code: the loop, the tools, the prompt. In reinforcement learning, the policy is what turns a state into an action, and that code shapes what the agent does as much as the weights do. So the harness is the policy. Liang et al. named it early: Code as Policies, arxiv.org/abs/2209.07753.</div>
+      </div>
+      <div class="pagenum"></div>
+    </section>
+"""
+
 deck = deck.replace("</style>", EXTRA_CSS + "</style>", 1)
 deck = deck.replace("slide s-cover hairlines active", "slide s-cover hairlines", 1)
-deck = deck.replace('<div class="stage">', '<div class="stage">\n' + OPENING_SLIDE + ABOUT_SLIDE + OVERLAY_SLIDE + FOURTH_IN_ACT1 + CONNECTOR_SLIDE + DIVIDER_ACT2, 1)
+deck = deck.replace('<div class="stage">', '<div class="stage">\n' + OPENING_SLIDE + ABOUT_SLIDE + OVERLAY_SLIDE + FOURTH_IN_ACT1 + POLICY_SLIDE + CONNECTOR_SLIDE + DIVIDER_ACT2, 1)
 deck = deck.replace("</body>", OVERLAY_JS + "\n</body>", 1)
 deck = deck.replace("__HORSE__", horse_b64).replace("__MLDEBT__", png_b64).replace("__AGENTDEBT__", svg_b64)
 deck = deck.replace('src="5-models-same-harness-different-config.jpeg"', 'src="data:image/jpeg;base64,' + jpg_b64 + '"')
@@ -227,6 +260,14 @@ deck = deck.replace('src="loopcraft.jpg"', 'src="data:image/png;base64,' + loop_
 deck = deck.replace('src="about-frame.jpg"', 'src="data:image/jpeg;base64,' + about_b64 + '"')
 deck = deck.replace("<title>Act II · Coding Agents Are Compilers · Loopcraft</title>",
                     "<title>The Agent as Compiler</title>", 1)
+
+import re as _re
+_total = deck.count('class="pagenum"')
+_ctr = [0]
+def _renum(_m):
+    _ctr[0] += 1
+    return '<div class="pagenum">%02d / %d</div>' % (_ctr[0], _total)
+deck = _re.sub(r'<div class="pagenum">[^<]*</div>', _renum, deck)
 
 out = ROOT / "agent-as-compiler.html"
 out.write_text(deck)

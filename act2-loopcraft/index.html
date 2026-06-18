@@ -311,6 +311,7 @@
   .s-source .src-cite-lab { font-family:'Hanken Grotesk',sans-serif; font-weight:600; text-transform:uppercase; letter-spacing:0.16em; font-size:clamp(11px,0.82vw,13px); color:var(--ink); opacity:0.7; }
   .s-source .src-cite-ref { font-family:'DM Mono',ui-monospace,monospace; font-size:clamp(11px,0.85vw,14px); color:var(--ink); opacity:0.78; }
   .slide:not(.active) video { display: none; }
+  .s-divider .pagenum { color: var(--paper); opacity: 0.6; }
 </style>
 </head>
 <body>
@@ -443,7 +444,7 @@
         <div class="src-txt">
           <div class="src-eyebrow caption">From my notes</div>
           <h2 class="src-title">A code harness runs two layers.</h2>
-          <p class="src-body">A model, and ordinary code: Python, Rust, famously bash. Line the agent up against a compiler and they map stage for stage. The weights are the <em>middle IR</em>. The harness is the <em>backend</em> that does the real work.</p>
+          <p class="src-body">A model, and ordinary code: Python, Rust, famously bash. Line the agent up against a compiler and they map stage for stage. The weights are the <em>middle IR</em>.</p>
           <div class="src-cite">
             <span class="src-cite-lab caption">All models learn the same things</span>
             <span class="src-cite-ref">Universal Geometry of Embeddings &middot; arxiv.org/abs/2505.12540</span>
@@ -810,34 +811,10 @@
         <h2 class="dtitle">Reward is<br/>All You Need.</h2>
         <div class="dsub">Own the loop. Don't rent the model.</div>
       </div>
+      <div class="pagenum"></div>
     </section>
 
-    <!-- ACT II CLOSER — REWARD IS ALL YOU NEED · observation ─────── -->
-    <section class="slide s-split hairlines">
-      <div class="topframe">
-        <div class="topbar">
-          <div class="h">Two kinds of team.</div>
-          <div class="lab-tag caption">Observation</div>
-        </div>
-        <div class="split-body">
-          <div class="panel">
-            <div class="ptag caption">Prompt-agent teams</div>
-            <div class="phead">Stay flat.</div>
-            <div class="pbody">They re-tune their prompts on every frontier release and land back where they started. The work resets each time a new model ships.</div>
-            <div class="pex"><div class="pex-lab caption">Example</div><div class="pex-item">You, on Claude Code.</div><div class="pex-sub">Re-tuning prompts by hand on every new model.</div></div>
-            <div class="pfoot caption">Flat across releases.</div>
-          </div>
-          <div class="panel">
-            <div class="ptag caption">Winning teams</div>
-            <div class="phead">Compound.</div>
-            <div class="pbody">They build off accumulated traces and reward loops. Every run feeds the next, so each release lifts a system that was already climbing.</div>
-            <div class="pex"><div class="pex-lab caption">Examples</div><div class="pex-item">Anthropic. Devin.</div><div class="pex-sub">Systems that learn from your traces and improve on their own.</div></div>
-            <div class="pfoot caption">Compounding across releases.</div>
-          </div>
-        </div>
-      </div>
-      <div class="pagenum">Act III</div>
-    </section>
+
 
     <!-- ACT III — a simple loop (Nirant's own work) -->
     <section class="slide s-chapter hairlines">
