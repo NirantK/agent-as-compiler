@@ -224,34 +224,9 @@ OVERLAY_JS = """
 </script>
 """
 
-POLICY_SLIDE = """
-    <!-- ACT I — CODE IS THE POLICY -->
-    <section class="slide s-chapter hairlines">
-      <div class="pixel-glitch" aria-hidden="true">
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-          <defs><pattern id="vsPolicy" width="2.4" height="100" patternUnits="userSpaceOnUse"><line x1="0.5" y1="0" x2="0.5" y2="100" stroke="#1F2BE0" stroke-width="1.0"/></pattern></defs>
-          <rect x="36" y="0" width="38" height="14" fill="url(#vsPolicy)"/>
-          <rect x="22" y="14" width="50" height="12" fill="url(#vsPolicy)"/>
-          <rect x="34" y="26" width="46" height="11" fill="url(#vsPolicy)"/>
-          <rect x="16" y="37" width="60" height="13" fill="url(#vsPolicy)"/>
-          <rect x="28" y="50" width="48" height="11" fill="url(#vsPolicy)"/>
-          <rect x="18" y="61" width="62" height="14" fill="url(#vsPolicy)"/>
-          <rect x="34" y="75" width="44" height="12" fill="url(#vsPolicy)"/>
-          <rect x="22" y="87" width="50" height="13" fill="url(#vsPolicy)"/>
-        </svg>
-      </div>
-      <div class="frame">
-        <div class="nm-tag">Reinforcement learning, in one line</div>
-        <div class="ttl">Code is the policy.</div>
-        <div class="lede">The harness is just code: the loop, the tools, the prompt. In reinforcement learning, the policy is what turns a state into an action, and that code shapes what the agent does as much as the weights do. So the harness is the policy. Liang et al. named it early: Code as Policies, arxiv.org/abs/2209.07753.</div>
-      </div>
-      <div class="pagenum"></div>
-    </section>
-"""
-
 deck = deck.replace("</style>", EXTRA_CSS + "</style>", 1)
 deck = deck.replace("slide s-cover hairlines active", "slide s-cover hairlines", 1)
-deck = deck.replace('<div class="stage">', '<div class="stage">\n' + OPENING_SLIDE + ABOUT_SLIDE + OVERLAY_SLIDE + FOURTH_IN_ACT1 + POLICY_SLIDE + CONNECTOR_SLIDE + DIVIDER_ACT2, 1)
+deck = deck.replace('<div class="stage">', '<div class="stage">\n' + OPENING_SLIDE + ABOUT_SLIDE + OVERLAY_SLIDE + FOURTH_IN_ACT1 + CONNECTOR_SLIDE + DIVIDER_ACT2, 1)
 deck = deck.replace("</body>", OVERLAY_JS + "\n</body>", 1)
 deck = deck.replace("__HORSE__", horse_b64).replace("__MLDEBT__", png_b64).replace("__AGENTDEBT__", svg_b64)
 deck = deck.replace('src="5-models-same-harness-different-config.jpeg"', 'src="data:image/jpeg;base64,' + jpg_b64 + '"')
