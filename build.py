@@ -107,8 +107,8 @@ ABOUT_SLIDE = """
           <div class="about-main">
             <div class="about-lead">We help agent companies build better agent harnesses.</div>
             <div class="timeline">
-              <div class="trow"><div class="yr">2025</div><div class="tt">Helped Ragas modernize. Ran search evals with Littlebird.ai.</div></div>
               <div class="trow"><div class="yr">2026</div><div class="tt">Helped Kavana cut costs 40% with caching, at 1M chats a day. LiteLLM contributors.</div></div>
+              <div class="trow"><div class="yr">2025</div><div class="tt">Helped Ragas modernize. Ran search evals with Littlebird.ai.</div></div>
               <div class="trow"><div class="yr">Now</div><div class="tt">Optimizing a presentations harness to 10 cents a deck.</div></div>
             </div>
             <div class="cred">
@@ -243,7 +243,7 @@ WHATIS_SLIDE = """
       <div class="frame">
         <div class="nm-tag">Definition</div>
         <div class="ttl">What is a harness?</div>
-        <div class="lede">Everything around the model that turns a text generator into something that acts. The loop that calls it, the tools it can reach, the system prompt and skills that aim it, the verifier that grades the output, and the sandbox it runs in. The model writes tokens. The harness decides what to do with them, runs it, checks it, and goes again.</div>
+        <div class="lede">A harness reduces the time it takes from when you have a desire to when you have it. It is the code around the model: the loop, the tools, the system prompt, the verifier, and the sandbox.</div>
       </div>
       <div class="pagenum"></div>
     </section>
