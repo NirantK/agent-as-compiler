@@ -44,7 +44,7 @@ EXTRA_CSS = """
   /* ─── ACT I — DEBT OVERLAY (click/key reveal, no opacity blend) ─── */
   .s-overlay { background: var(--paper); }
   .s-overlay .ov-stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: clamp(8px, 1.6vh, 22px) 0; }
-  .s-overlay .figure { position: relative; width: min(88%, 1120px); max-height: 100%; aspect-ratio: 1333 / 533; cursor: pointer; }
+  .s-overlay .figure { position: relative; width: min(88%, 1120px); max-height: 100%; aspect-ratio: 1333 / 493; cursor: pointer; }
   .s-overlay .figure img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: contain; }
   .s-overlay .figure .base { z-index: 1; }
   .s-overlay .figure .ov { z-index: 2; opacity: 0; transition: opacity 520ms ease; }
