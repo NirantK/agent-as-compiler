@@ -322,6 +322,19 @@
   .s-takeimg .ti-title { font-family: 'Newsreader', Georgia, serif; font-size: clamp(20px, min(2.1vw,3.6vh), 34px); line-height: 1.05; color: var(--ink); }
   .s-takeimg .ti-sub { font-family: 'Hanken Grotesk', sans-serif; font-size: clamp(13px,0.95vw,16px); line-height: 1.4; color: var(--ink); opacity: 0.8; margin-top: 3px; }
   .s-fourth .fourth-lead { font-family: 'Newsreader', Georgia, serif; font-size: clamp(19px, min(2.2vw, 3.7vh), 34px); line-height: 1.16; letter-spacing: -0.005em; color: var(--ink); max-width: 52ch; margin: clamp(12px,2vh,26px) 0 clamp(4px,1vh,10px); }
+  .s-role .role-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 1.06fr 0.94fr; gap: clamp(28px,3.6vw,72px); align-items: center; margin-top: clamp(14px,2vh,28px); }
+  .s-role .role-text { display: flex; flex-direction: column; gap: clamp(13px,1.9vh,24px); }
+  .s-role .role-lead { font-family: 'Newsreader', Georgia, serif; font-size: clamp(26px, min(3vw,5vh), 52px); line-height: 1.04; letter-spacing: -0.005em; color: var(--ink); }
+  .s-role .role-mid { font-family: 'Hanken Grotesk', sans-serif; font-size: clamp(15px,1.05vw,18px); line-height: 1.5; color: var(--ink); max-width: 46ch; }
+  .s-role .role-close { font-family: 'Newsreader', Georgia, serif; font-size: clamp(18px, min(2vw,3.3vh), 30px); line-height: 1.18; color: var(--ink); max-width: 32ch; }
+  .s-role .role-close .hl { color: var(--amber); font-style: italic; }
+  .s-role .role-fig { display: flex; align-items: center; justify-content: center; min-height: 0; height: 100%; }
+  .s-role .role-fig svg { width: 100%; max-width: clamp(300px, 30vw, 460px); height: auto; }
+  .s-role .role-fig .wlabel { font-family: 'Hanken Grotesk', sans-serif; font-weight: 700; font-size: 15px; fill: var(--ink); text-anchor: middle; }
+  .s-role .role-fig .hub-a { font-family: 'DM Mono', ui-monospace, monospace; font-size: 11px; fill: var(--amber); text-anchor: middle; letter-spacing: 1px; }
+  .s-role .role-fig .hub-b { font-family: 'Newsreader', Georgia, serif; font-size: 23px; fill: var(--ink); text-anchor: middle; }
+  @keyframes roleSpin { to { transform: rotate(360deg); } }
+  .s-role .role-fig .spin { transform-box: fill-box; transform-origin: center; animation: roleSpin 9s linear infinite; }
 </style>
 </head>
 <body>
@@ -955,6 +968,45 @@
           <div class="ti-row"><div class="ti-num">01</div><div><div class="ti-title">Agents compile human input.</div><div class="ti-sub">The compiler framing tells you where the real work is.</div></div></div>
           <div class="ti-row"><div class="ti-num">02</div><div><div class="ti-title">The loops that matter sit outside the agent.</div><div class="ti-sub">Conversion for SaaS, the merge loop for coding. That is loopcraft.</div></div></div>
           <div class="ti-row"><div class="ti-num">03</div><div><div class="ti-title">Reward makes the model interchangeable.</div><div class="ti-sub">Find the reward up a loop, feed it back. Swap the model, the output holds.</div></div></div>
+        </div>
+      </div>
+      <div class="pagenum"></div>
+    </section>
+
+    <!-- ACT III — your role as an engineer -->
+    <section class="slide s-role hairlines">
+      <div class="topframe">
+        <div class="topbar">
+          <div class="h">Your job.</div>
+          <div class="lab-tag caption">The engineer in the loop</div>
+        </div>
+        <div class="role-body">
+          <div class="role-text">
+            <div class="role-lead">Keep the loop running.</div>
+            <div class="role-mid">Auto-harness, meta-harness, auto-research, whatever its name. Make it run on problems worth solving, often, and correctly. Then define and measure everything else users expect.</div>
+            <div class="role-close">We spent decades building software on short text and clicks. Now we can process language. <span class="hl">Great power, and the responsibility to nail it.</span></div>
+          </div>
+          <div class="role-fig">
+            <svg class="role-loop" viewBox="0 0 460 460" fill="none" aria-label="The auto-improvement loop, ringed by four guarantees: it runs, on worthy problems, often, and correctly">
+              <circle cx="230" cy="230" r="140" stroke="#1F2BE0" stroke-width="2.5"/>
+              <circle class="spin" cx="230" cy="230" r="140" stroke="#B07814" stroke-width="3" stroke-dasharray="3 15" stroke-linecap="round"/>
+              <circle cx="230" cy="230" r="64" fill="#F0EBDE" stroke="#1F2BE0" stroke-width="2"/>
+              <text class="hub-a" x="230" y="223">auto</text>
+              <text class="hub-b" x="230" y="250">improve</text>
+              <g fill="#B07814">
+                <circle cx="230" cy="90" r="6"/>
+                <circle cx="370" cy="230" r="6"/>
+                <circle cx="230" cy="370" r="6"/>
+                <circle cx="90" cy="230" r="6"/>
+              </g>
+              <g class="wlabel">
+                <text x="230" y="58">It runs</text>
+                <text x="400" y="235">Worthy</text>
+                <text x="230" y="402">Often</text>
+                <text x="58" y="235">Correct</text>
+              </g>
+            </svg>
+          </div>
         </div>
       </div>
       <div class="pagenum"></div>
