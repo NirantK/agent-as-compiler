@@ -147,7 +147,7 @@ DIVIDER_ACT2 = """
       <div class="dframe">
         <div class="deyebrow">Act II</div>
         <h2 class="dtitle">Coding Agents<br/>are Compilers.</h2>
-        <div class="dsub">With general models, coding agents combine to show convergent behaviour.</div>
+        <div class="dsub">An agent compiles human instructions into machine code.</div>
       </div>
       <div class="pagenum"></div>
     </section>
