@@ -311,6 +311,8 @@
   .s-split .pdiag { width: 100%; max-width: clamp(180px, 16vw, 240px); height: auto; margin: clamp(12px, 1.6vh, 20px) 0 0; align-self: flex-start; }
   .s-split .pdiag text { font-family: 'DM Mono', ui-monospace, monospace; font-size: 11px; fill: var(--ink); text-anchor: middle; }
   .s-split .pdiag .flow { stroke-dasharray: 5 4; animation: lpflow 1.5s linear infinite; }
+  .s-shot .shot-stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: clamp(8px,1.6vh,20px) 0; }
+  .s-shot .shot-stage img { max-width: 84%; max-height: 46vh; object-fit: contain; display: block; border: 1.5px solid var(--ink); border-radius: 4px; }
 </style>
 </head>
 <body>
@@ -925,6 +927,40 @@
         <div class="close-mark" aria-hidden="true">&#8220;</div>
         <p class="close-quote">A company should be able to switch out a <span class="hl">'generalist' model</span> without losing the <span class="hl">'company veteran' expertise</span> built into their learning system. This is the key 'test' of your control and sovereignty in the era ahead.</p>
         <div class="close-attr"><span class="close-name">Satya Nadella</span><span class="close-role">Chairman &amp; CEO, Microsoft &middot; x.com/satyanadella/status/2066182223213293753</span></div>
+      </div>
+      <div class="pagenum"></div>
+    </section>
+
+    <!-- ACT III — usage limit: switch the model, keep the context -->
+    <section class="slide s-shot hairlines">
+      <div class="topframe">
+        <div class="topbar">
+          <div class="h">Switch the model, keep the context.</div>
+          <div class="lab-tag caption">Hit the limit? Carry the summary</div>
+        </div>
+        <div class="shot-stage">
+          <img src="usage-limit.jpeg" alt="A Claude interface at 90 percent of the session limit, with the prompt: based on our conversation so far, create a summary so that GPT can understand it clearly" />
+        </div>
+        <div class="diag-caption">
+          <div class="dc-lead">Ninety percent of the limit, so compile the conversation and hand it to another model.</div>
+          <div class="dc-sub">The summary is the portable part: the expertise that outlives the model. Nadella's test, done by hand.</div>
+        </div>
+      </div>
+      <div class="pagenum"></div>
+    </section>
+
+    <!-- ACT III — three takeaways -->
+    <section class="slide s-agenda hairlines">
+      <div class="topframe">
+        <div class="topbar">
+          <div class="h">Three takeaways.</div>
+          <div class="lab-tag caption">What to keep</div>
+        </div>
+        <div class="ag-list">
+          <div class="ag-item"><div class="ag-num">01</div><div><div class="ag-title">Agents compile human input.</div><div class="ag-sub">Coding agents, and LLM products, turn human intent into output. The compiler framing tells you where the real work is.</div></div></div>
+          <div class="ag-item"><div class="ag-num">02</div><div><div class="ag-title">The loops that matter sit outside the agent.</div><div class="ag-sub">Conversion for a SaaS product. The merge loop for coding. Loopcraft is stacking those loops well.</div></div></div>
+          <div class="ag-item"><div class="ag-num">03</div><div><div class="ag-title">Reward makes the model interchangeable.</div><div class="ag-sub">The reward signal and the environment carry the quality. Go up a loop to find the reward, then feed it back to change something inside the loop.</div></div></div>
+        </div>
       </div>
       <div class="pagenum"></div>
     </section>
