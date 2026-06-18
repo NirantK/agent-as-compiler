@@ -1,0 +1,956 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Act II · Coding Agents Are Compilers · Loopcraft</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMiAzMic+PHJlY3Qgd2lkdGg9JzMyJyBoZWlnaHQ9JzMyJyByeD0nNycgZmlsbD0nIzFGMkJFMCcvPjxwYXRoIGQ9J00xNiA3IEE5IDkgMCAxIDEgMTAuNSA5JyBmaWxsPSdub25lJyBzdHJva2U9JyNGMEVCREUnIHN0cm9rZS13aWR0aD0nMi44JyBzdHJva2UtbGluZWNhcD0ncm91bmQnLz48cGF0aCBkPSdNMTYgMy41IEwxNiAxMC41IEwyMSA3IFonIGZpbGw9JyNGMEVCREUnLz48Y2lyY2xlIGN4PScxNicgY3k9JzE2JyByPSczJyBmaWxsPScjRTZCNDUwJy8+PC9zdmc+" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;1,300;1,400;1,500&family=Hanken+Grotesk:wght@400;500;600;700&family=Inter:wght@400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper:    #F0EBDE;
+    --paper-2:  #E6E0CE;
+    --ink:      #1F2BE0;
+    --ink-soft: #5560E5;
+    --grid:     rgba(31, 43, 224, 0.10);
+    --rule:     #1F2BE0;
+    /* Two meaning-bearing accents — used only inside the diagrams as data-ink. */
+    --red:      #C23A2B;
+    --amber:    #B07814;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; background: #0a0a0a; }
+  body { font-family: 'Hanken Grotesk', 'Helvetica Neue', sans-serif; color: var(--ink); overflow: hidden; }
+
+  .deck { position: fixed; inset: 0; display: grid; place-items: center; }
+  .stage { position: relative; width: 100vw; height: 100vh; overflow: hidden; background: var(--paper); }
+  .stage::before {
+    content: ''; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(to right, var(--grid) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+    background-size: clamp(28px, 2.2vw, 44px) clamp(28px, 2.2vw, 44px);
+    pointer-events: none; z-index: 1;
+  }
+  .slide { position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: opacity 280ms ease; z-index: 2; }
+  .slide.active { opacity: 1; pointer-events: auto; }
+
+  /* ─── TYPE SYSTEM ─── */
+  .disp { font-family: 'Newsreader', Georgia, serif; font-weight: 400; line-height: 0.92; letter-spacing: -0.005em; color: var(--ink); }
+  .body-tx { font-family: 'Hanken Grotesk', sans-serif; font-weight: 400; line-height: 1.5; color: var(--ink); }
+  .micro { font-family: 'Hanken Grotesk', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em; color: var(--ink); }
+  .mono { font-family: 'DM Mono', ui-monospace, monospace; font-weight: 400; color: var(--ink); }
+
+  .pagenum { position: absolute; right: clamp(28px, 2.4vw, 48px); bottom: clamp(48px, 4.8vh, 76px); font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(11px, 0.82vw, 13px); color: var(--ink); letter-spacing: 0.06em; z-index: 9; }
+
+  .hairlines::before, .hairlines::after { content: ''; position: absolute; left: clamp(36px, 3.6vw, 80px); right: clamp(36px, 3.6vw, 80px); height: 1.5px; background: var(--ink); z-index: 4; pointer-events: none; }
+  .hairlines::before { top: clamp(28px, 2.6vh, 48px); }
+  .hairlines::after  { bottom: clamp(20px, 2vh, 32px); }
+
+  .nav-hint { position: fixed; left: clamp(36px, 3.6vw, 80px); bottom: clamp(48px, 4.8vh, 76px); font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(10px, 0.75vw, 12px); color: var(--ink); letter-spacing: 0.08em; opacity: 0.4; z-index: 12; pointer-events: none; }
+
+  /* ─── DECORATIVE ─── */
+  .pixel-glitch { position: absolute; pointer-events: none; z-index: 3; }
+  .pixel-glitch svg { display: block; width: 100%; height: 100%; }
+  .qr-block { position: absolute; pointer-events: none; z-index: 5; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); gap: 1.5px; background: var(--paper); padding: 4px; box-shadow: 0 0 0 1.5px var(--paper); }
+  .qr-block .px { background: var(--paper); }
+  .qr-block .px.on { background: var(--ink); }
+
+  /* ─── COVER ─── */
+  .s-cover { background: var(--paper); }
+  .s-cover .titlewrap { position: absolute; left: clamp(36px, 3.6vw, 80px); top: clamp(72px, 8vh, 140px); z-index: 5; max-width: 62%; }
+  .s-cover .title { font-family: 'Newsreader', Georgia, serif; font-weight: 400; font-size: clamp(70px, min(8vw, 13vh), 150px); line-height: 0.94; letter-spacing: -0.008em; color: var(--ink); }
+  .s-cover .subkicker { margin-top: clamp(20px, 2.2vh, 36px); display: flex; flex-direction: column; gap: 6px; }
+  .s-cover .subkicker .l { font-family: 'Hanken Grotesk', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em; font-size: clamp(13px, 1vw, 16px); color: var(--ink); }
+  .s-cover .subkicker .ed { font-family: 'Newsreader', Georgia, serif; font-size: clamp(22px, min(2.4vw, 4vh), 40px); line-height: 1.14; color: var(--ink); max-width: 24ch; }
+  .s-cover .pixel-glitch { top: clamp(56px, 6vh, 116px); right: clamp(36px, 3.6vw, 80px); width: clamp(240px, 28vw, 480px); bottom: clamp(120px, 13vh, 210px); }
+  .s-cover .qr-block { top: clamp(56px, 6vh, 116px); right: clamp(112px, 7.4vw, 188px); width: clamp(54px, 4vw, 80px); height: clamp(54px, 4vw, 80px); }
+  .s-cover .vstack { position: absolute; right: clamp(36px, 3.6vw, 60px); top: 50%; transform: translateY(-50%); z-index: 5; display: flex; flex-direction: column; gap: clamp(10px, 1.2vh, 18px); align-items: end; }
+  .s-cover .vstack .v-row { font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(12px, 0.9vw, 15px); line-height: 1; color: var(--ink); letter-spacing: 0.04em; writing-mode: vertical-rl; text-orientation: mixed; }
+  .s-cover .cfooter { position: absolute; left: clamp(36px, 3.6vw, 80px); right: clamp(680px, 40vw, 880px); bottom: clamp(82px, 8vh, 120px); display: flex; justify-content: flex-start; align-items: end; z-index: 5; gap: clamp(28px, 3vw, 56px); }
+  .s-cover .cfooter .colf { font-family: 'Hanken Grotesk', sans-serif; font-size: clamp(14px, 0.92vw, 15px); line-height: 1.45; color: var(--ink); }
+  .s-cover .cfooter .colf .ftag { font-family: 'Hanken Grotesk', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em; font-size: clamp(11px, 0.78vw, 13px); margin-bottom: 4px; color: var(--ink); }
+
+  /* ─── MANIFESTO ─── */
+  .s-manifesto { background: var(--paper); }
+  .s-manifesto .stmt-wrap { position: absolute; left: clamp(60px, 8vw, 160px); right: clamp(60px, 8vw, 160px); top: 50%; transform: translateY(-50%); z-index: 5; text-align: left; padding-left: clamp(30px, 3.2vw, 58px); }
+  .s-manifesto .stmt-wrap::before { content:''; position:absolute; left:0; top:2px; bottom:2px; width: clamp(4px,0.45vw,7px); background: var(--ink); border-radius:1px; }
+  .s-manifesto .pixel-glitch { top: clamp(54px,6vh,112px); right: clamp(36px,3.6vw,80px); width: clamp(150px,15vw,290px); height: clamp(96px,17vh,190px); opacity: 0.6; }
+  .s-manifesto .stmt { font-family: 'Newsreader', Georgia, serif; font-weight: 400; font-size: clamp(42px, min(5vw, 8.4vh), 92px); line-height: 1.08; letter-spacing: -0.005em; color: var(--ink); }
+  .s-manifesto .stmt .roman { font-style: normal; font-weight: 500; }
+  .s-manifesto .attr { margin-top: clamp(28px, 3vh, 50px); display: flex; gap: clamp(14px, 1.4vw, 24px); align-items: center; border-top: 1px solid var(--ink); padding-top: clamp(10px, 1.2vh, 18px); }
+  .s-manifesto .attr .who { font-family: 'Hanken Grotesk', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em; font-size: clamp(12px, 0.85vw, 14px); color: var(--ink); }
+  .s-manifesto .attr .meta-tag { font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(12px, 0.82vw, 14px); color: var(--ink); letter-spacing: 0.04em; opacity: 0.78; }
+
+  /* ─── INDEX ─── */
+  .s-index { background: var(--paper); }
+  .s-index .frame { position: absolute; inset: clamp(76px, 8vh, 130px) clamp(36px, 3.6vw, 80px) clamp(100px, 10vh, 150px); display: grid; grid-template-columns: 1fr; grid-template-rows: auto 1fr; gap: clamp(20px, 2.2vh, 36px); z-index: 5; }
+  .s-index .topbar { display: flex; align-items: end; justify-content: space-between; border-bottom: 1.5px solid var(--ink); padding-bottom: clamp(12px, 1.4vh, 22px); gap: 30px; }
+  .s-index .topbar .h { font-family: 'Newsreader', Georgia, serif; font-size: clamp(40px, min(4.6vw, 7.8vh), 88px); line-height: 0.95; color: var(--ink); }
+  .s-index .topbar .lab-tag { font-family: 'Hanken Grotesk', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em; font-size: clamp(12px, 0.9vw, 14px); color: var(--ink); text-align: right; }
+  .s-index .list { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: clamp(16px, 2.4vh, 32px) clamp(28px, 3vw, 56px); }
+  .s-index .row { display: grid; grid-template-columns: 56px 1fr; gap: clamp(12px, 1.4vw, 22px); border-bottom: 1px solid rgba(31, 43, 224, 0.18); padding-bottom: clamp(12px, 1.4vh, 20px); align-self: stretch; }
+  .s-index .row .num-tag { font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(13px, 0.9vw, 15px); color: var(--ink); letter-spacing: 0.04em; padding-top: 6px; }
+  .s-index .row h3 { margin: 0 0 6px 0; font-family: 'Newsreader', Georgia, serif; font-weight: 400; font-size: clamp(26px, 2.1vw, 40px); line-height: 1.05; color: var(--ink); }
+  .s-index .row .ed-meta { font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(11px, 0.78vw, 13px); letter-spacing: 0.04em; opacity: 0.7; margin: 0 0 6px 0; }
+  .s-index .row p { margin: 0; font-family: 'Hanken Grotesk', sans-serif; font-size: clamp(14px, 0.95vw, 15px); line-height: 1.5; color: var(--ink); max-width: 94%; }
+  .s-index .row .ex { margin-top: clamp(7px, 1vh, 13px); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(11px, 0.8vw, 13px); color: var(--ink); }
+  .s-index .row .ex .lead { font-weight: 600; opacity: 0.5; text-transform: uppercase; letter-spacing: 0.12em; }
+  .s-index .row .ex .logo { height: 20px; width: 20px; display: block; border-radius: 4px; }
+  .s-index .row .ex a.ref { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+
+  /* ─── CHAPTER ─── */
+  .s-chapter { background: var(--paper); }
+  .s-chapter .pixel-glitch { top: clamp(60px, 6vh, 120px); right: 0; width: clamp(220px, 26vw, 460px); bottom: clamp(110px, 12vh, 200px); opacity: 0.75; }
+  .s-chapter .frame { position: absolute; left: clamp(36px, 3.6vw, 80px); right: clamp(280px, 30vw, 540px); top: clamp(80px, 9vh, 140px); bottom: clamp(110px, 11vh, 170px); display: flex; flex-direction: column; justify-content: center; z-index: 5; gap: clamp(18px, 2vh, 32px); }
+  .s-chapter .nm-tag { font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(13px, 0.92vw, 15px); color: var(--ink); letter-spacing: 0.06em; }
+  .s-chapter .ttl { font-family: 'Newsreader', Georgia, serif; font-weight: 400; font-size: clamp(52px, min(5.6vw, 9.2vh), 120px); line-height: 1.0; color: var(--ink); letter-spacing: -0.005em; }
+  .s-chapter .lede { font-family: 'Hanken Grotesk', sans-serif; font-weight: 400; font-size: clamp(15px, 1vw, 18px); line-height: 1.5; color: var(--ink); max-width: 58ch; }
+
+  /* ─── QUOTE ─── */
+  .s-quote { background: var(--paper); }
+  .s-quote .pixel-glitch { top: clamp(40px, 4vh, 80px); right: clamp(36px, 3.6vw, 80px); width: clamp(160px, 16vw, 280px); bottom: clamp(40px, 4vh, 80px); opacity: 0.6; }
+  .s-quote .qframe { position: absolute; left: clamp(36px, 3.6vw, 80px); right: clamp(220px, 22vw, 380px); top: 50%; transform: translateY(-50%); z-index: 5; }
+  .s-quote .qkicker { font-family: 'Hanken Grotesk', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.2em; font-size: clamp(12px, 0.9vw, 14px); color: var(--ink); margin-bottom: clamp(16px, 1.8vh, 28px); }
+  .s-quote .qbody { font-family: 'Newsreader', Georgia, serif; font-weight: 400; font-size: clamp(38px, min(4.4vw, 7vh), 88px); line-height: 1.1; color: var(--ink); letter-spacing: -0.005em; max-width: 94%; }
+  .s-quote .qbody.long { font-size: clamp(19px, min(2.4vw, 3.9vh), 36px); line-height: 1.3; max-width: 100%; }
+  .s-quote .qframe.wide { right: clamp(120px, 14vw, 260px); }
+  .s-quote .qtitle { font-family: 'Newsreader', Georgia, serif; font-weight: 400; font-size: clamp(34px, min(4.2vw, 6.8vh), 78px); line-height: 0.98; letter-spacing: -0.005em; color: var(--ink); margin: clamp(10px, 1.4vh, 20px) 0 clamp(16px, 2vh, 30px); }
+  .s-quote .qattr { margin-top: clamp(24px, 2.6vh, 40px); display: grid; grid-template-columns: auto 1fr; gap: clamp(14px, 1.4vw, 24px); align-items: end; border-top: 1px solid var(--ink); padding-top: clamp(10px, 1.2vh, 18px); }
+  .s-quote .qattr .who-tag { font-family: 'Hanken Grotesk', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em; font-size: clamp(13px, 0.92vw, 15px); color: var(--ink); }
+  .s-quote .qattr .role-meta { font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(12px, 0.85vw, 14px); color: var(--ink); letter-spacing: 0.04em; opacity: 0.78; }
+
+  /* ─── SHARED FRAME + TOPBAR ─── */
+  .s-diagram, .s-compiler, .s-harness, .s-funnel, .s-split { background: var(--paper); }
+  .topframe { position: absolute; inset: clamp(76px, 8vh, 130px) clamp(36px, 3.6vw, 80px) clamp(100px, 10vh, 150px); display: flex; flex-direction: column; z-index: 5; }
+  .topbar { display: flex; align-items: end; justify-content: space-between; border-bottom: 1.5px solid var(--ink); padding-bottom: clamp(12px, 1.4vh, 22px); gap: 30px; }
+  .topbar .h { font-family: 'Newsreader', Georgia, serif; font-size: clamp(40px, min(4.6vw, 7.8vh), 88px); line-height: 0.95; color: var(--ink); }
+  .topbar .lab-tag { font-family: 'Hanken Grotesk', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em; font-size: clamp(12px, 0.9vw, 14px); color: var(--ink); text-align: right; white-space: nowrap; }
+
+  /* ─── GENERIC DIAGRAM STAGE + CAPTION (compiler, harness, back-edges) ─── */
+  .diagram-stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: clamp(8px, 1.6vh, 22px) 0; }
+  .diagram-stage svg { width: 100%; height: 100%; max-height: 48vh; }
+  .gsvg text { font-family: 'DM Mono', ui-monospace, monospace; }
+  .gsvg .nlbl { font-family: 'Hanken Grotesk', sans-serif; font-weight: 700; }
+  .diag-caption { border-top: 1.5px solid var(--ink); padding-top: clamp(10px, 1.4vh, 18px); display: grid; grid-template-columns: 1.35fr 1fr; gap: clamp(22px, 3vw, 52px); align-items: start; }
+  .diag-caption .dc-lead { font-family: 'Newsreader', Georgia, serif; font-size: clamp(22px, 2vw, 38px); line-height: 1.1; color: var(--ink); }
+  .diag-caption .dc-sub { font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(12px, 0.88vw, 14px); line-height: 1.55; color: var(--ink); opacity: 0.82; }
+
+  /* back-edge diagram legend */
+  .s-diagram .diag-legend { display: flex; gap: clamp(18px, 2.4vw, 48px); flex-wrap: wrap; border-top: 1.5px solid var(--ink); padding-top: clamp(10px, 1.3vh, 18px); }
+  .s-diagram .leg { display: flex; align-items: baseline; gap: 10px; }
+  .s-diagram .leg .sw { width: 26px; height: 0; border-top-width: 3px; border-top-style: solid; transform: translateY(-4px); }
+  .s-diagram .leg .lt { font-family: 'Hanken Grotesk', sans-serif; font-weight: 600; font-size: clamp(12px, 0.9vw, 14px); color: var(--ink); }
+  .s-diagram .leg .lr { font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(11px, 0.78vw, 13px); color: var(--ink); opacity: 0.7; }
+
+  /* ─── FUNNEL ─── */
+  .s-funnel .funnel-wrap { flex: 1; display: flex; flex-direction: column; min-height: 0; gap: clamp(16px, 2vh, 30px); }
+  .s-funnel .funnel-svg { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+  .s-funnel svg.funnel { width: 100%; height: 100%; max-height: 46vh; }
+  .s-funnel .fnote { display: grid; grid-template-columns: 1fr 1.3fr; gap: clamp(24px, 3vw, 56px); align-items: start; border-top: 1.5px solid var(--ink); padding-top: clamp(12px, 1.5vh, 22px); }
+  .s-funnel .fcap { font-family: 'Newsreader', Georgia, serif; font-size: clamp(24px, 2.2vw, 42px); line-height: 1.08; color: var(--ink); }
+  .s-funnel .fbody { font-family: 'Hanken Grotesk', sans-serif; font-size: clamp(14px, 1vw, 17px); line-height: 1.5; color: var(--ink); max-width: 52ch; }
+  .s-funnel .fbody b { font-weight: 700; }
+  .s-funnel .ftag { font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(11px, 0.8vw, 13px); letter-spacing: 0.06em; opacity: 0.7; margin-bottom: clamp(8px, 1vh, 14px); }
+
+  /* ─── SPLIT ─── */
+  .s-split .split-body { flex: 1; display: grid; grid-template-columns: 1fr 1fr; min-height: 0; margin-top: clamp(16px, 2vh, 30px); }
+  .s-split .panel { display: flex; flex-direction: column; padding: clamp(8px, 1.4vh, 22px) clamp(20px, 2.6vw, 52px); }
+  .s-split .panel + .panel { border-left: 1.5px solid var(--ink); }
+  .s-split .panel:first-child { padding-left: 0; }
+  .s-split .ptag { font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(12px, 0.85vw, 14px); letter-spacing: 0.04em; color: var(--ink); opacity: 0.78; margin-bottom: clamp(10px, 1.2vh, 16px); }
+  .s-split .phead { font-family: 'Newsreader', Georgia, serif; font-size: clamp(34px, min(3.4vw, 6vh), 64px); line-height: 0.98; letter-spacing: -0.005em; color: var(--ink); margin-bottom: clamp(14px, 1.8vh, 26px); }
+  .s-split .pbody { font-family: 'Hanken Grotesk', sans-serif; font-size: clamp(15px, 1.05vw, 18px); line-height: 1.5; color: var(--ink); max-width: 38ch; }
+  .s-split .pbody b { font-weight: 700; }
+  .s-split .pfoot { margin-top: auto; padding-top: clamp(14px, 1.8vh, 24px); border-top: 1px solid var(--ink); font-family: 'Hanken Grotesk', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em; font-size: clamp(12px, 0.88vw, 15px); color: var(--ink); }
+  .s-split .split-foot { border-top: 1.5px solid var(--ink); margin-top: clamp(10px, 1.4vh, 18px); padding-top: clamp(10px, 1.3vh, 16px); font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(11px, 0.85vw, 14px); line-height: 1.5; color: var(--ink); opacity: 0.82; }
+  .s-split .split-foot b { font-weight: 500; opacity: 1; }
+
+  /* ─── COLOPHON ─── */
+  .s-colophon { background: var(--paper); }
+  .s-colophon .pixel-glitch { top: clamp(80px, 9vh, 160px); left: clamp(36px, 3.6vw, 80px); width: clamp(220px, 26vw, 460px); bottom: clamp(220px, 22vh, 360px); opacity: 0.75; }
+  .s-colophon .qr-block { top: clamp(80px, 9vh, 160px); right: clamp(36px, 3.6vw, 80px); width: clamp(72px, 5vw, 100px); height: clamp(72px, 5vw, 100px); }
+  .s-colophon .titlewrap { position: absolute; right: clamp(36px, 3.6vw, 80px); top: 26%; z-index: 5; max-width: 58%; text-align: right; }
+  .s-colophon .ktag { font-family: 'Hanken Grotesk', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.22em; font-size: clamp(12px, 0.9vw, 14px); color: var(--ink); margin-bottom: clamp(14px, 1.6vh, 24px); }
+  .s-colophon .ttl { font-family: 'Newsreader', Georgia, serif; font-weight: 400; font-size: clamp(60px, min(7.2vw, 12vh), 156px); line-height: 0.96; color: var(--ink); letter-spacing: -0.005em; }
+  .s-colophon .col-footer { position: absolute; left: clamp(36px, 3.6vw, 80px); right: clamp(36px, 3.6vw, 80px); bottom: clamp(106px, 10.4vh, 160px); display: grid; grid-template-columns: 1fr 1fr 1fr 1.2fr; gap: clamp(20px, 2.4vw, 44px); z-index: 5; }
+  .s-colophon .col-footer > div { border-top: 1.5px solid var(--ink); padding-top: clamp(10px, 1.2vh, 16px); }
+  .s-colophon .col-footer .ftag { font-family: 'Hanken Grotesk', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em; font-size: clamp(11px, 0.78vw, 13px); margin-bottom: 6px; color: var(--ink); }
+  .s-colophon .col-footer .ftxt { font-family: 'Hanken Grotesk', sans-serif; font-size: clamp(14px, 0.95vw, 15px); line-height: 1.5; color: var(--ink); }
+  /* ─── ACT III — proof image + build/buy ─── */
+  .s-proof { background: var(--paper); }
+  .s-proof .proof-stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: clamp(8px, 1.6vh, 20px) 0; }
+  .s-proof .proof-stage img { width: 100%; height: 100%; max-height: 52vh; object-fit: contain; display: block; }
+  .s-split .test-line { font-family: 'Newsreader', Georgia, serif; font-weight: 400; font-size: clamp(26px, min(3.1vw, 5.2vh), 58px); line-height: 1.04; letter-spacing: -0.005em; color: var(--ink); margin-top: clamp(12px, 1.8vh, 24px); }
+  /* ─── ACT II — video demo ─── */
+  .s-video { background: var(--paper); }
+  .s-video .video-stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: clamp(8px, 1.6vh, 20px) 0; }
+  .s-video .video-stage video { width: auto; height: auto; max-width: 100%; max-height: 56vh; display: block; border: 1.5px solid var(--ink); }
+  /* ─── SECTION DIVIDERS (inverted, full-bleed visual markers) ─── */
+  .s-divider { background: var(--ink); }
+  .s-divider::before, .s-divider::after { content: ''; position: absolute; left: clamp(36px, 3.6vw, 80px); right: clamp(36px, 3.6vw, 80px); height: 1.5px; background: var(--paper); z-index: 4; pointer-events: none; }
+  .s-divider::before { top: clamp(28px, 2.6vh, 48px); }
+  .s-divider::after { bottom: clamp(20px, 2vh, 32px); }
+  .s-divider .dframe { position: absolute; inset: clamp(76px, 9vh, 140px) clamp(36px, 3.6vw, 80px) clamp(90px, 9vh, 140px); display: flex; flex-direction: column; justify-content: center; z-index: 5; }
+  .s-divider .deyebrow { font-family: 'Hanken Grotesk', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.24em; font-size: clamp(13px, 1.1vw, 18px); color: var(--paper); opacity: 0.82; margin-bottom: clamp(20px, 3vh, 46px); }
+  .s-divider .dtitle { font-family: 'Newsreader', Georgia, serif; font-weight: 400; font-size: clamp(56px, min(8.4vw, 14vh), 184px); line-height: 0.94; letter-spacing: -0.01em; color: var(--paper); margin: 0; }
+  .s-divider .dsub { font-family: 'Hanken Grotesk', sans-serif; font-size: clamp(16px, 1.3vw, 24px); line-height: 1.4; color: var(--paper); opacity: 0.85; margin-top: clamp(22px, 3vh, 46px); max-width: 42ch; }
+  .s-divider .dpx { position: absolute; top: clamp(60px, 8vh, 130px); right: clamp(36px, 3.6vw, 80px); width: clamp(170px, 19vw, 340px); bottom: clamp(84px, 10vh, 170px); z-index: 4; opacity: 0.85; pointer-events: none; }
+  .s-divider .dpx svg { width: 100%; height: 100%; display: block; }
+
+  /* ─── ABOUT (Act I) ─── */
+  .s-about { background: var(--paper); }
+  .s-about .about-lead { font-family: 'Newsreader', Georgia, serif; font-weight: 400; font-size: clamp(26px, min(3.2vw, 5.4vh), 56px); line-height: 1.06; letter-spacing: -0.005em; color: var(--ink); margin: clamp(14px, 2vh, 30px) 0 clamp(18px, 2.6vh, 36px); max-width: 26ch; }
+  .s-about .timeline { display: flex; flex-direction: column; border-top: 1.5px solid var(--ink); }
+  .s-about .trow { display: grid; grid-template-columns: clamp(90px, 12vw, 170px) 1fr; gap: clamp(20px, 3vw, 56px); align-items: baseline; padding: clamp(13px, 2.1vh, 26px) 0; border-bottom: 1px solid rgba(31, 43, 224, 0.18); }
+  .s-about .yr { font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(15px, 1.35vw, 24px); color: var(--ink); letter-spacing: 0.04em; }
+  .s-about .tt { font-family: 'Hanken Grotesk', sans-serif; font-size: clamp(15px, 1.25vw, 21px); line-height: 1.45; color: var(--ink); }
+  /* ─── ACT II — super-compiler / product landscape ─── */
+  .s-super .super-lead { font-family: 'Newsreader', Georgia, serif; font-weight: 400; font-size: clamp(20px, min(2.3vw, 3.8vh), 38px); line-height: 1.12; letter-spacing: -0.005em; color: var(--ink); margin: clamp(14px, 2vh, 26px) 0 clamp(16px, 2.2vh, 30px); max-width: 44ch; }
+  .s-super .cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: clamp(12px, 1.4vw, 24px); }
+  .s-super .card { border: 1.5px solid var(--ink); border-radius: 3px; padding: clamp(12px, 1.4vw, 20px); display: flex; flex-direction: column; gap: clamp(8px, 1.2vh, 14px); background: var(--paper); }
+  .s-super .logo-wrap { width: clamp(40px, 3.4vw, 56px); height: clamp(40px, 3.4vw, 56px); border-radius: 10px; background: #fff; box-shadow: 0 0 0 1px rgba(31,43,224,0.12); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .s-super .logo-wrap img { width: 80%; height: 80%; object-fit: contain; display: block; }
+  .s-super .cname { font-family: 'Hanken Grotesk', sans-serif; font-weight: 700; font-size: clamp(14px, 1vw, 18px); color: var(--ink); }
+  .s-super .cio { font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(11px, 0.82vw, 13px); line-height: 1.5; color: var(--ink); }
+  .s-super .cio .arr { color: var(--ink-soft); }
+  .s-super .cio .out { display: block; }
+  .s-super .super-foot { margin-top: clamp(16px, 2.2vh, 30px); padding-top: clamp(10px, 1.4vh, 18px); border-top: 1.5px solid var(--ink); font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(11px, 0.85vw, 14px); line-height: 1.5; color: var(--ink); opacity: 0.85; }
+  /* ─── ACT II — the fourth resource ─── */
+  .s-fourth { background: var(--paper); }
+  .s-fourth .res-row { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(12px, 1.6vw, 28px); align-content: center; min-height: 0; }
+  .s-fourth .res { border: 1.5px solid var(--ink); border-radius: 3px; padding: clamp(16px, 1.8vw, 28px); display: flex; flex-direction: column; gap: clamp(12px, 1.6vh, 22px); background: var(--paper); }
+  .s-fourth .res.new { border-color: var(--amber); border-width: 2px; }
+  .s-fourth .res .gtop { display: flex; align-items: center; justify-content: space-between; }
+  .s-fourth .res .glyph { width: clamp(40px, 4vw, 62px); height: clamp(40px, 4vw, 62px); display: block; }
+  .s-fourth .res .idx { font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(11px, 0.82vw, 13px); color: var(--ink); opacity: 0.55; letter-spacing: 0.06em; }
+  .s-fourth .res.new .idx { color: var(--amber); opacity: 1; font-weight: 500; }
+  .s-fourth .res .rlabel { font-family: 'Newsreader', Georgia, serif; font-size: clamp(22px, 2vw, 38px); line-height: 1.0; color: var(--ink); }
+  .s-fourth .res.new .rlabel { color: var(--amber); }
+  .s-fourth .res .rmeta { font-family: 'Hanken Grotesk', sans-serif; font-size: clamp(12px, 0.92vw, 15px); line-height: 1.4; color: var(--ink); opacity: 0.85; }
+  .s-fourth .fourth-cap { border-top: 1.5px solid var(--ink); padding-top: clamp(10px, 1.4vh, 18px); margin-top: clamp(14px, 2vh, 26px); font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(12px, 0.95vw, 15px); line-height: 1.5; color: var(--ink); max-width: 96ch; }
+  .s-fourth .fourth-cap b { color: var(--amber); font-weight: 500; }
+  /* ─── PULL QUOTES (feature quotes) ─── */
+  .s-pq { background: var(--paper); }
+  .s-pq .pq-frame { position: absolute; inset: clamp(68px, 8vh, 116px) clamp(56px, 7vw, 150px) clamp(76px, 8vh, 126px); display: flex; flex-direction: column; justify-content: center; z-index: 5; }
+  .s-pq .pq-mark { font-family: 'Newsreader', Georgia, serif; font-weight: 500; font-size: clamp(120px, 21vh, 260px); line-height: 1; height: 0.46em; color: var(--amber); margin-bottom: clamp(6px, 1vh, 16px); pointer-events: none; }
+  .s-pq .pq-kicker { font-family: 'Hanken Grotesk', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.2em; font-size: clamp(12px, 0.95vw, 15px); color: var(--ink); margin-bottom: clamp(14px, 1.8vh, 26px); }
+  .s-pq .pq-body { font-family: 'Newsreader', Georgia, serif; font-weight: 400; color: var(--ink); letter-spacing: -0.005em; }
+  .s-pq .pq-body.big { font-size: clamp(26px, min(3.3vw, 5.4vh), 58px); line-height: 1.1; max-width: 22ch; }
+  .s-pq .pq-body.med { font-size: clamp(19px, min(2.5vw, 4.1vh), 40px); line-height: 1.24; max-width: 38ch; }
+  .s-pq .pq-body .hl { color: var(--amber); font-style: italic; }
+  .s-pq .pq-attr { margin-top: clamp(26px, 3.4vh, 52px); display: flex; align-items: center; gap: clamp(14px, 1.6vw, 26px); }
+  .s-pq .pq-attr::before { content: ''; width: clamp(36px, 4vw, 70px); height: 2px; background: var(--ink); flex: none; }
+  .s-pq .pq-name { font-family: 'Newsreader', Georgia, serif; font-size: clamp(20px, 1.9vw, 34px); color: var(--ink); }
+  .s-pq .pq-role { font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(12px, 0.9vw, 15px); color: var(--ink); opacity: 0.7; }
+  .s-manifesto .stmt .amb { color: var(--amber); font-style: italic; font-weight: 500; }
+  /* ─── super-compiler → Claude Agent SDK ─── */
+  .s-super .sdk-bar { display: flex; align-items: baseline; gap: clamp(10px, 1.4vw, 20px); border: 1.5px solid var(--ink); border-radius: 3px; background: rgba(31,43,224,0.06); padding: clamp(12px, 1.6vh, 20px) clamp(16px, 2vw, 28px); margin: clamp(12px, 2vh, 26px) 0 clamp(12px, 1.8vh, 22px); }
+  .s-super .sdk-bar .sdk-name { font-family: 'Newsreader', Georgia, serif; font-size: clamp(22px, 2.2vw, 40px); line-height: 1; color: var(--ink); }
+  .s-super .sdk-bar .sdk-sub { font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(11px, 0.85vw, 14px); color: var(--ink); opacity: 0.6; letter-spacing: 0.04em; }
+  .s-super .prods { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(12px, 1.4vw, 24px); }
+  .s-super .prod { border: 1.5px solid var(--ink); border-radius: 3px; padding: clamp(14px, 1.6vw, 22px); display: flex; flex-direction: column; gap: clamp(7px, 1vh, 12px); }
+  .s-super .prod .pname { font-family: 'Newsreader', Georgia, serif; font-size: clamp(18px, 1.5vw, 28px); line-height: 1.02; color: var(--ink); margin-bottom: clamp(2px, 0.6vh, 6px); }
+  .s-super .prod .pcfg { font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(11px, 0.82vw, 13px); line-height: 1.4; color: var(--ink); }
+  .s-super .prod .pcfg .pk { color: var(--amber); }
+
+  /* ===== rev2 edits ===== */
+  .s-fourth .res.new .rmeta { color: var(--amber); opacity: 0.9; }
+
+  .s-index .row .rhead { display:flex; align-items:center; justify-content:space-between; gap: clamp(10px,1.2vw,18px); margin-bottom: 6px; }
+  .s-index .row .rhead h3 { margin:0; }
+  .s-index .loopdiag { width: clamp(100px, 8vw, 128px); height:auto; flex:none; }
+  .s-index .loopdiag text { font-family:'DM Mono', ui-monospace, monospace; font-size:9px; fill: var(--ink); text-anchor:middle; }
+  .s-index .row .ex code { font-family:'DM Mono', ui-monospace, monospace; font-size:0.94em; border:1px solid rgba(31,43,224,0.34); border-radius:3px; padding:1px 6px; color: var(--ink); }
+  @keyframes lpflow { to { stroke-dashoffset: -36; } }
+  .loopdiag .flow { stroke-dasharray: 5 4; animation: lpflow 1.5s linear infinite; }
+
+  .s-pq.with-fig .pq-frame { display:grid; grid-template-columns: 1.04fr 0.96fr; gap: clamp(28px,4vw,72px); align-items:center; }
+  .s-pq.with-fig .pq-fig { display:flex; align-items:center; justify-content:center; }
+  .s-pq.with-fig .pq-fig img { width:100%; max-height:60vh; object-fit:contain; display:block; border:1.5px solid var(--ink); background:#fff; border-radius:3px; }
+  .s-pq.with-fig .pq-mark { font-size: clamp(80px, 12vh, 150px); }
+  .s-pq.with-fig .pq-body.med { font-size: clamp(16px, min(2vw,3.1vh), 27px); line-height:1.32; max-width: 40ch; }
+
+  .s-split .pex { margin-top: clamp(16px,2.2vh,30px); border-left: 2px solid var(--ink); padding: clamp(6px,1vh,12px) clamp(12px,1.4vw,20px); }
+  .s-split .pex .pex-lab { font-family:'Hanken Grotesk',sans-serif; font-weight:600; text-transform:uppercase; letter-spacing:0.14em; font-size:clamp(11px,0.8vw,13px); color:var(--ink); opacity:0.5; margin-bottom:5px; }
+  .s-split .pex .pex-item { font-family:'Newsreader',Georgia,serif; font-size:clamp(18px,1.6vw,30px); line-height:1.12; color:var(--ink); }
+  .s-split .pex .pex-sub { font-family:'Hanken Grotesk',sans-serif; font-size:clamp(13px,0.95vw,16px); line-height:1.4; color:var(--ink); opacity:0.78; margin-top:4px; }
+
+  /* closing — Nadella on solid cobalt */
+  .s-close { background: var(--ink); }
+  .s-close::before, .s-close::after { content:''; position:absolute; left:clamp(36px,3.6vw,80px); right:clamp(36px,3.6vw,80px); height:1.5px; background:var(--paper); z-index:4; pointer-events:none; }
+  .s-close::before { top: clamp(28px,2.6vh,48px); }
+  .s-close::after { bottom: clamp(20px,2vh,32px); }
+  .s-close .close-frame { position:absolute; inset: clamp(76px,9vh,140px) clamp(56px,7vw,150px) clamp(86px,9vh,140px); display:flex; flex-direction:column; justify-content:center; z-index:5; }
+  .s-close .close-kicker { font-family:'Hanken Grotesk',sans-serif; font-weight:600; text-transform:uppercase; letter-spacing:0.24em; font-size:clamp(13px,1.1vw,18px); color:var(--paper); opacity:0.82; margin-bottom: clamp(18px,2.6vh,38px); }
+  .s-close .close-mark { font-family:'Newsreader',Georgia,serif; font-weight:500; font-size:clamp(90px,16vh,200px); line-height:1; height:0.42em; color:#E6B450; margin-bottom: clamp(6px,1vh,14px); pointer-events:none; }
+  .s-close .close-quote { font-family:'Newsreader',Georgia,serif; font-weight:400; font-size:clamp(25px,min(3.2vw,5.3vh),58px); line-height:1.12; letter-spacing:-0.005em; color:var(--paper); max-width:26ch; }
+  .s-close .close-quote .hl { color:#E6B450; font-style:italic; }
+  .s-close .close-attr { margin-top:clamp(20px,2.6vh,40px); display:flex; align-items:center; gap:clamp(14px,1.6vw,26px); }
+  .s-close .close-attr::before { content:''; width:clamp(36px,4vw,70px); height:2px; background:var(--paper); flex:none; }
+  .s-close .close-name { font-family:'Newsreader',Georgia,serif; font-size:clamp(20px,1.9vw,34px); color:var(--paper); }
+  .s-close .close-role { font-family:'DM Mono',ui-monospace,monospace; font-size:clamp(12px,0.9vw,15px); color:var(--paper); opacity:0.7; }
+  .s-close .close-contact { margin-top: clamp(20px,2.6vh,38px); padding-top: clamp(12px,1.6vh,20px); border-top:1.5px solid var(--paper); display:flex; flex-wrap:wrap; gap:6px clamp(14px,1.6vw,28px); align-items:baseline; }
+  .s-close .close-contact .ct { font-family:'DM Mono',ui-monospace,monospace; font-size:clamp(13px,0.98vw,16px); color:var(--paper); letter-spacing:0.04em; }
+  .s-close .close-contact .ct.lead { color:#E6B450; }
+  .s-close .pagenum { color: var(--paper); opacity: 0.6; }
+
+  /* ─── ACT II — source diagram: agent line vs compiler line ─── */
+  .s-source { background: var(--paper); }
+  .s-source .src-frame { position:absolute; inset: clamp(76px,8vh,130px) clamp(36px,3.6vw,80px) clamp(90px,9vh,140px); display:grid; grid-template-columns: 0.92fr 1.08fr; gap: clamp(34px,4.4vw,84px); align-items:center; z-index:5; }
+  .s-source .src-fig { display:flex; align-items:center; justify-content:center; min-height:0; height:100%; }
+  .s-source .src-fig img, .s-source .src-fig svg { max-height:74vh; max-width:100%; width:auto; height:auto; object-fit:contain; display:block; }
+  .s-source .src-txt { display:flex; flex-direction:column; }
+  .s-source .src-eyebrow { font-family:'Hanken Grotesk',sans-serif; font-weight:600; text-transform:uppercase; letter-spacing:0.2em; font-size:clamp(12px,0.9vw,14px); color:var(--ink); margin-bottom: clamp(14px,1.8vh,26px); }
+  .s-source .src-title { font-family:'Newsreader',Georgia,serif; font-weight:400; font-size:clamp(34px,min(3.8vw,6.4vh),72px); line-height:1.0; letter-spacing:-0.005em; color:var(--ink); margin:0; }
+  .s-source .src-body { font-family:'Hanken Grotesk',sans-serif; font-size:clamp(16px,1.15vw,20px); line-height:1.5; color:var(--ink); max-width:42ch; margin-top: clamp(16px,2vh,28px); }
+  .s-source .src-body em { font-style:italic; color:var(--amber); }
+  .s-source .src-cite { margin-top: clamp(20px,2.6vh,40px); padding-top: clamp(10px,1.4vh,18px); border-top:1.5px solid var(--ink); display:flex; flex-direction:column; gap:4px; }
+  .s-source .src-cite-lab { font-family:'Hanken Grotesk',sans-serif; font-weight:600; text-transform:uppercase; letter-spacing:0.16em; font-size:clamp(11px,0.82vw,13px); color:var(--ink); opacity:0.7; }
+  .s-source .src-cite-ref { font-family:'DM Mono',ui-monospace,monospace; font-size:clamp(11px,0.85vw,14px); color:var(--ink); opacity:0.78; }
+  .slide:not(.active) video { display: none; }
+</style>
+</head>
+<body>
+
+<div class="deck">
+  <div class="stage">
+
+    <!-- 1. COVER ──────────────────────────────────────────────── -->
+    <section class="slide s-cover hairlines active">
+      <div class="titlewrap">
+        <h1 class="title">The LLM is<br/>just an IR.</h1>
+        <div class="subkicker">
+          <div class="l caption">Act II of III</div>
+          <div class="ed">An agent compiles human instructions into machine code.</div>
+        </div>
+      </div>
+
+      <div class="pixel-glitch" aria-hidden="true">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+          <defs><pattern id="vs1" width="2.4" height="100" patternUnits="userSpaceOnUse"><line x1="0.5" y1="0" x2="0.5" y2="100" stroke="#1F2BE0" stroke-width="1.0" /></pattern></defs>
+          <rect x="36" y="0"  width="38" height="14" fill="url(#vs1)"/>
+          <rect x="22" y="14" width="50" height="12" fill="url(#vs1)"/>
+          <rect x="34" y="26" width="46" height="11" fill="url(#vs1)"/>
+          <rect x="16" y="37" width="60" height="13" fill="url(#vs1)"/>
+          <rect x="28" y="50" width="48" height="11" fill="url(#vs1)"/>
+          <rect x="18" y="61" width="62" height="14" fill="url(#vs1)"/>
+          <rect x="34" y="75" width="44" height="12" fill="url(#vs1)"/>
+          <rect x="22" y="87" width="50" height="13" fill="url(#vs1)"/>
+        </svg>
+      </div>
+
+      <div class="vstack">
+        <div class="v-row caption">act.II</div>
+        <div class="v-row caption">loopcraft</div>
+        <div class="v-row caption">harness</div>
+      </div>
+
+      <div class="cfooter">
+        <div class="colf">
+          <div class="ftag caption">Frame</div>
+          <div>Run passes over the IR,<br/>then verify what comes out.</div>
+        </div>
+        <div class="colf">
+          <div class="ftag caption">Diagrams</div>
+          <div>h/t @hamel<br/>&amp; @nirantk</div>
+        </div>
+      </div>
+
+      <div class="pagenum">01 / 8</div>
+    </section>
+
+
+    <!-- ACT II — COMPILER vs AGENT DIAGRAM ─────────────────────────────── -->
+    <section class="slide s-compiler hairlines">
+      <div class="topframe">
+        <div class="topbar">
+          <div class="h">One machine, two names.</div>
+          <div class="lab-tag caption">Compiler &#8596; coding agent</div>
+        </div>
+        <div class="diagram-stage">
+          <svg class="gsvg" viewBox="0 0 1200 360" preserveAspectRatio="xMidYMid meet" aria-label="A compiler pipeline aligned stage-by-stage against a coding-agent pipeline">
+            <defs><marker id="ca-ink" markerWidth="9" markerHeight="9" refX="6.2" refY="3" orient="auto"><path d="M0,0 L6.5,3 L0,6 Z" fill="#1F2BE0"/></marker></defs>
+            <text x="140" y="106" text-anchor="end" font-size="13" fill="#1F2BE0" letter-spacing="2">COMPILER</text>
+            <text x="140" y="262" text-anchor="end" font-size="13" fill="#1F2BE0" letter-spacing="2">AGENT</text>
+            <path d="M362 56 L362 48 L946 48 L946 56" fill="none" stroke="#B07814" stroke-width="1.4"/>
+            <text x="654" y="40" text-anchor="middle" font-size="14" fill="#B07814">LLMs are an "IR"</text>
+            <g stroke="#1F2BE0" stroke-width="2">
+              <line x1="340" y1="102" x2="358" y2="102" marker-end="url(#ca-ink)"/>
+              <line x1="542" y1="102" x2="560" y2="102" marker-end="url(#ca-ink)"/>
+              <line x1="744" y1="102" x2="762" y2="102" marker-end="url(#ca-ink)"/>
+              <line x1="946" y1="102" x2="964" y2="102" marker-end="url(#ca-ink)"/>
+            </g>
+            <g fill="#F0EBDE" stroke="#1F2BE0" stroke-width="1.6">
+              <rect x="160" y="70" width="180" height="64" rx="2"/>
+              <rect x="362" y="70" width="180" height="64" rx="2" fill="rgba(31,43,224,0.07)"/>
+              <rect x="564" y="70" width="180" height="64" rx="2" fill="rgba(31,43,224,0.07)"/>
+              <rect x="766" y="70" width="180" height="64" rx="2" fill="rgba(31,43,224,0.07)"/>
+              <rect x="968" y="70" width="180" height="64" rx="2"/>
+            </g>
+            <g font-size="16" fill="#1F2BE0" text-anchor="middle" class="nlbl">
+              <text x="250" y="107">Source</text>
+              <text x="452" y="107">High IR</text>
+              <text x="654" y="107">Med IR</text>
+              <text x="856" y="107">LLVM IR</text>
+              <text x="1058" y="107">Machine code</text>
+            </g>
+            <g stroke="#5560E5" stroke-width="1.4" stroke-dasharray="2 5" opacity="0.7">
+              <line x1="250" y1="134" x2="250" y2="226"/>
+              <line x1="452" y1="134" x2="452" y2="226"/>
+              <line x1="654" y1="134" x2="654" y2="226"/>
+              <line x1="856" y1="134" x2="856" y2="226"/>
+              <line x1="1058" y1="134" x2="1058" y2="226"/>
+            </g>
+            <g stroke="#1F2BE0" stroke-width="2">
+              <line x1="340" y1="258" x2="358" y2="258" marker-end="url(#ca-ink)"/>
+              <line x1="542" y1="258" x2="560" y2="258" marker-end="url(#ca-ink)"/>
+              <line x1="744" y1="258" x2="762" y2="258" marker-end="url(#ca-ink)"/>
+              <line x1="946" y1="258" x2="964" y2="258" marker-end="url(#ca-ink)"/>
+            </g>
+            <g fill="#F0EBDE" stroke="#1F2BE0" stroke-width="1.6">
+              <rect x="160" y="226" width="180" height="64" rx="2"/>
+              <rect x="362" y="226" width="180" height="64" rx="2" fill="rgba(31,43,224,0.07)"/>
+              <rect x="564" y="226" width="180" height="64" rx="2" fill="rgba(31,43,224,0.07)"/>
+              <rect x="766" y="226" width="180" height="64" rx="2" fill="rgba(31,43,224,0.07)"/>
+              <rect x="968" y="226" width="180" height="64" rx="2"/>
+            </g>
+            <g font-size="16" fill="#1F2BE0" text-anchor="middle" class="nlbl">
+              <text x="250" y="263">Context</text>
+              <text x="452" y="263">Plan, explore</text>
+              <text x="654" y="263">Generate</text>
+              <text x="856" y="263">Output, run</text>
+              <text x="1058" y="263">Verify</text>
+            </g>
+          </svg>
+        </div>
+        <div class="diag-caption">
+          <div class="dc-lead">Coding agents are compilers of human instructions into machine code.</div>
+          <div class="dc-sub">The LLM is the IR. An IR is never the product. You run passes over it, then you check what comes out.</div>
+        </div>
+      </div>
+      <div class="pagenum">02 / 8</div>
+    </section>
+    <!-- ACT II — SOURCE DIAGRAM: agent line vs compiler line -->
+    <section class="slide s-source hairlines">
+      <div class="src-frame">
+        <div class="src-fig">
+          <svg class="src-svg" version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 710.6754483721334 897.99048145907" width="710.6754483721334" height="897.99048145907"><defs><style class="style-fonts">
+      @font-face { font-family: Nunito; src: url(data:font/woff2;base64,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); }</style></defs><rect x="0" y="0" width="710.6754483721334" height="897.99048145907" fill="none"></rect><g stroke-linecap="round" transform="translate(147.69747675225517 273.32997971802615) rotate(0 63.724132344193094 20.31489982743733)"><path d="M0 0 C33.48 0, 66.97 0, 127.45 0 M0 0 C27.88 0, 55.77 0, 127.45 0 M127.45 0 C127.45 10.01, 127.45 20.03, 127.45 40.63 M127.45 0 C127.45 13.46, 127.45 26.93, 127.45 40.63 M127.45 40.63 C86.31 40.63, 45.16 40.63, 0 40.63 M127.45 40.63 C92.78 40.63, 58.11 40.63, 0 40.63 M0 40.63 C0 30.29, 0 19.95, 0 0 M0 40.63 C0 25.9, 0 11.17, 0 0" stroke="#000" stroke-width="2" fill="none"></path></g><g transform="translate(180.52163808814748 281.1448795454635) rotate(0 30.89997100830078 12.5)"><text x="30.89997100830078" y="19.08" font-family="Nunito, sans-serif, Segoe UI Emoji" font-size="20px" fill="#000" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="alphabetic">Source</text></g><g stroke-linecap="round" transform="translate(147.8301884114262 361.55819313104075) rotate(0 63.724132344193094 20.31489982743733)"><path d="M0 0 C42.74 0, 85.48 0, 127.45 0 M0 0 C26.26 0, 52.52 0, 127.45 0 M127.45 0 C127.45 13.73, 127.45 27.46, 127.45 40.63 M127.45 0 C127.45 8.53, 127.45 17.06, 127.45 40.63 M127.45 40.63 C85.47 40.63, 43.5 40.63, 0 40.63 M127.45 40.63 C92.13 40.63, 56.81 40.63, 0 40.63 M0 40.63 C0 28.28, 0 15.93, 0 0 M0 40.63 C0 25.21, 0 9.78, 0 0" stroke="#000" stroke-width="2" fill="none"></path></g><g transform="translate(177.9643549353068 369.3730929584781) rotate(0 33.5899658203125 12.5)"><text x="33.5899658203125" y="19.08" font-family="Nunito, sans-serif, Segoe UI Emoji" font-size="20px" fill="#000" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="alphabetic">High IR</text></g><g stroke-linecap="round" transform="translate(150.8700366045132 438.6361231801202) rotate(0 63.724132344193094 20.31489982743733)"><path d="M0 0 C32.94 0, 65.89 0, 127.45 0 M0 0 C34.69 0, 69.38 0, 127.45 0 M127.45 0 C127.45 12.44, 127.45 24.88, 127.45 40.63 M127.45 0 C127.45 13.09, 127.45 26.19, 127.45 40.63 M127.45 40.63 C91.48 40.63, 55.51 40.63, 0 40.63 M127.45 40.63 C81.72 40.63, 35.99 40.63, 0 40.63 M0 40.63 C0 27.25, 0 13.87, 0 0 M0 40.63 C0 29.11, 0 17.59, 0 0" stroke="#000" stroke-width="2" fill="none"></path></g><g transform="translate(182.8441994662844 446.4510230075575) rotate(0 31.749969482421875 12.5)"><text x="31.749969482421875" y="19.08" font-family="Nunito, sans-serif, Segoe UI Emoji" font-size="20px" fill="#000" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="alphabetic">Med IR</text></g><g stroke-linecap="round" transform="translate(148.17073153684487 528.1038134099072) rotate(0 63.724132344193094 20.31489982743733)"><path d="M0 0 C46.56 0, 93.13 0, 127.45 0 M0 0 C27.18 0, 54.36 0, 127.45 0 M127.45 0 C127.45 8.76, 127.45 17.52, 127.45 40.63 M127.45 0 C127.45 8.95, 127.45 17.89, 127.45 40.63 M127.45 40.63 C86.75 40.63, 46.06 40.63, 0 40.63 M127.45 40.63 C79.73 40.63, 32.02 40.63, 0 40.63 M0 40.63 C0 27.41, 0 14.18, 0 0 M0 40.63 C0 29.88, 0 19.12, 0 0" stroke="#000" stroke-width="2" fill="none"></path></g><g transform="translate(174.43490294353796 535.9187132373445) rotate(0 37.4599609375 12.5)"><text x="37.4599609375" y="19.08" font-family="Nunito, sans-serif, Segoe UI Emoji" font-size="20px" fill="#000" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="alphabetic">LLVM IR</text></g><g stroke-linecap="round" transform="translate(119.05930230058493 627.7126775952238) rotate(0 96.53646407582573 30)"><path d="M0 0 C71.09 0, 142.19 0, 193.07 0 M0 0 C77.09 0, 154.18 0, 193.07 0 M193.07 0 C193.07 12.87, 193.07 25.74, 193.07 60 M193.07 0 C193.07 17.32, 193.07 34.65, 193.07 60 M193.07 60 C153.89 60, 114.71 60, 0 60 M193.07 60 C118.32 60, 43.57 60, 0 60 M0 60 C0 40.67, 0 21.34, 0 0 M0 60 C0 47.23, 0 34.47, 0 0" stroke="#000" stroke-width="2" fill="none"></path></g><g transform="translate(152.06582100287505 645.2126775952238) rotate(0 63.529945373535156 12.5)"><text x="63.529945373535156" y="19.08" font-family="Nunito, sans-serif, Segoe UI Emoji" font-size="20px" fill="#000" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="alphabetic">Machine Code</text></g><g stroke-linecap="round"><g transform="translate(211.49422490995676 311.55093755927373) rotate(0 0.03205052984640133 22.00362778588169)"><path d="M0 0 C0.02 16.69, 0.05 33.38, 0.06 44.01 M0 0 C0.02 16.83, 0.05 33.66, 0.06 44.01" stroke="#000" stroke-width="2" fill="none"></path></g><g transform="translate(211.49422490995676 311.55093755927373) rotate(0 0.03205052984640133 22.00362778588169)"><path d="M0.06 44.01 L-6.29 30.42 L6.38 30.4 L0.06 44.01" stroke="none" stroke-width="0" fill="#F0EBDE" fill-rule="evenodd"></path><path d="M0.06 44.01 C-2.35 38.86, -4.76 33.7, -6.29 30.42 M0.06 44.01 C-2.37 38.81, -4.8 33.61, -6.29 30.42 M-6.29 30.42 C-1.25 30.41, 3.8 30.41, 6.38 30.4 M-6.29 30.42 C-2.04 30.42, 2.21 30.41, 6.38 30.4 M6.38 30.4 C3.88 35.79, 1.38 41.17, 0.06 44.01 M6.38 30.4 C4.21 35.08, 2.03 39.77, 0.06 44.01 M0.06 44.01 C0.06 44.01, 0.06 44.01, 0.06 44.01 M0.06 44.01 C0.06 44.01, 0.06 44.01, 0.06 44.01" stroke="#000" stroke-width="2" fill="none"></path></g></g><mask></mask><g stroke-linecap="round"><g transform="translate(213.7257710426411 400.2213215412776) rotate(0 0.03206405393075329 22.081251586530925)"><path d="M0 0 C0.02 15.45, 0.04 30.9, 0.06 44.16 M0 0 C0.02 14.73, 0.04 29.47, 0.06 44.16" stroke="#000" stroke-width="2" fill="none"></path></g><g transform="translate(213.7257710426411 400.2213215412776) rotate(0 0.03206405393075329 22.081251586530925)"><path d="M0.06 44.16 L-6.29 30.58 L6.38 30.56 L0.06 44.16" stroke="none" stroke-width="0" fill="#F0EBDE" fill-rule="evenodd"></path><path d="M0.06 44.16 C-2.16 39.41, -4.38 34.66, -6.29 30.58 M0.06 44.16 C-2.06 39.63, -4.18 35.1, -6.29 30.58 M-6.29 30.58 C-2.62 30.57, 1.06 30.57, 6.38 30.56 M-6.29 30.58 C-2.17 30.57, 1.95 30.57, 6.38 30.56 M6.38 30.56 C3.97 35.76, 1.55 40.96, 0.06 44.16 M6.38 30.56 C4.45 34.72, 2.52 38.89, 0.06 44.16 M0.06 44.16 C0.06 44.16, 0.06 44.16, 0.06 44.16 M0.06 44.16 C0.06 44.16, 0.06 44.16, 0.06 44.16" stroke="#000" stroke-width="2" fill="none"></path></g></g><mask></mask><g stroke-linecap="round"><g transform="translate(213.46034772430085 480.08369243936977) rotate(0 0.03206405393075329 22.081251586530925)"><path d="M0 0 C0.02 13.94, 0.04 27.87, 0.06 44.16 M0 0 C0.02 16.71, 0.05 33.42, 0.06 44.16" stroke="#000" stroke-width="2" fill="none"></path></g><g transform="translate(213.46034772430085 480.08369243936977) rotate(0 0.03206405393075329 22.081251586530925)"><path d="M0.06 44.16 L-6.29 30.58 L6.38 30.56 L0.06 44.16" stroke="none" stroke-width="0" fill="#F0EBDE" fill-rule="evenodd"></path><path d="M0.06 44.16 C-1.94 39.88, -3.95 35.59, -6.29 30.58 M0.06 44.16 C-2.34 39.02, -4.75 33.88, -6.29 30.58 M-6.29 30.58 C-3.55 30.57, -0.81 30.57, 6.38 30.56 M-6.29 30.58 C-1.56 30.57, 3.17 30.56, 6.38 30.56 M6.38 30.56 C4.8 33.96, 3.23 37.36, 0.06 44.16 M6.38 30.56 C3.98 35.73, 1.58 40.9, 0.06 44.16 M0.06 44.16 C0.06 44.16, 0.06 44.16, 0.06 44.16 M0.06 44.16 C0.06 44.16, 0.06 44.16, 0.06 44.16" stroke="#000" stroke-width="2" fill="none"></path></g></g><mask></mask><g stroke-linecap="round"><g transform="translate(211.6424483930141 567.7735472349959) rotate(0 0.02841432260311194 34.564808350334715)"><path d="M0 0 C0.02 26.17, 0.04 52.34, 0.06 69.13 M0 0 C0.01 17.86, 0.03 35.72, 0.06 69.13" stroke="#000" stroke-width="2" fill="none"></path></g><g transform="translate(211.6424483930141 567.7735472349959) rotate(0 0.02841432260311194 34.564808350334715)"><path d="M0.06 69.13 L-6.29 55.54 L6.38 55.53 L0.06 69.13" stroke="none" stroke-width="0" fill="#F0EBDE" fill-rule="evenodd"></path><path d="M0.06 69.13 C-2.35 63.99, -4.75 58.84, -6.29 55.54 M0.06 69.13 C-1.58 65.62, -3.22 62.11, -6.29 55.54 M-6.29 55.54 C-1.53 55.54, 3.23 55.53, 6.38 55.53 M-6.29 55.54 C-1.69 55.54, 2.91 55.53, 6.38 55.53 M6.38 55.53 C4.98 58.56, 3.57 61.58, 0.06 69.13 M6.38 55.53 C4.3 60.02, 2.21 64.5, 0.06 69.13 M0.06 69.13 C0.06 69.13, 0.06 69.13, 0.06 69.13 M0.06 69.13 C0.06 69.13, 0.06 69.13, 0.06 69.13" stroke="#000" stroke-width="2" fill="none"></path></g></g><mask></mask><g transform="translate(266.8306611924472 326.9304019594565) rotate(0 61.519935607910156 25)"><text x="61.519935607910156" y="19.08" font-family="Nunito, sans-serif, Segoe UI Emoji" font-size="20px" fill="#000" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="alphabetic">Tokenization, </text><text x="61.519935607910156" y="44.08" font-family="Nunito, sans-serif, Segoe UI Emoji" font-size="20px" fill="#000" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="alphabetic">Parsing</text></g><g transform="translate(263.1216636046165 406.96304442026303) rotate(0 65.85993957519531 12.5)"><text x="65.85993957519531" y="19.08" font-family="Nunito, sans-serif, Segoe UI Emoji" font-size="20px" fill="#000" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="alphabetic">Type Checking</text></g><g transform="translate(251.9938169789266 491.4377714729453) rotate(0 62.659934997558594 12.5)"><text x="62.659934997558594" y="19.08" font-family="Nunito, sans-serif, Segoe UI Emoji" font-size="20px" fill="#000" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="alphabetic">Optimizations</text></g><g transform="translate(260.38219543595915 583.3443514391984) rotate(0 62.659934997558594 12.5)"><text x="62.659934997558594" y="19.08" font-family="Nunito, sans-serif, Segoe UI Emoji" font-size="20px" fill="#000" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="alphabetic">Optimizations</text></g><g stroke-linecap="round" transform="translate(148.94576718832377 14.33601181850463) rotate(0 63.724132344193094 20.31489982743733)"><path d="M0 0 C40.63 0, 81.26 0, 127.45 0 M0 0 C33.13 0, 66.25 0, 127.45 0 M127.45 0 C127.45 15.71, 127.45 31.41, 127.45 40.63 M127.45 0 C127.45 11.89, 127.45 23.79, 127.45 40.63 M127.45 40.63 C79.44 40.63, 31.43 40.63, 0 40.63 M127.45 40.63 C88.35 40.63, 49.25 40.63, 0 40.63 M0 40.63 C0 25.51, 0 10.38, 0 0 M0 40.63 C0 26.82, 0 13.02, 0 0" stroke="#1971c2" stroke-width="2" fill="none"></path></g><g transform="translate(172.48993737431374 22.15091164594196) rotate(0 40.179962158203125 12.5)"><text x="40.179962158203125" y="19.08" font-family="Nunito, sans-serif, Segoe UI Emoji" font-size="20px" fill="#1971c2" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="alphabetic">message</text></g><g stroke-linecap="round" transform="translate(149.0784788474948 103.01995206112042) rotate(0 63.724132344193094 17.5)"><path d="M0 0 C38.03 0, 76.07 0, 127.45 0 M0 0 C46.53 0, 93.06 0, 127.45 0 M127.45 0 C127.45 11.74, 127.45 23.48, 127.45 35 M127.45 0 C127.45 8.18, 127.45 16.37, 127.45 35 M127.45 35 C97 35, 66.54 35, 0 35 M127.45 35 C80.02 35, 32.59 35, 0 35 M0 35 C0 25.14, 0 15.28, 0 0 M0 35 C0 26.47, 0 17.93, 0 0" stroke="#1971c2" stroke-width="2" fill="none"></path></g><g transform="translate(179.22264750760587 108.01995206112042) rotate(0 33.57996368408203 12.5)"><text x="33.57996368408203" y="19.08" font-family="Nunito, sans-serif, Segoe UI Emoji" font-size="20px" fill="#1971c2" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="alphabetic">context</text></g><g stroke-linecap="round" transform="translate(151.96307943928696 179.64215528059503) rotate(0 63.724132344193094 20.31489982743733)"><path d="M0 0 C45.27 0, 90.55 0, 127.45 0 M0 0 C45.41 0, 90.81 0, 127.45 0 M127.45 0 C127.45 15.76, 127.45 31.52, 127.45 40.63 M127.45 0 C127.45 10.51, 127.45 21.01, 127.45 40.63 M127.45 40.63 C95.75 40.63, 64.04 40.63, 0 40.63 M127.45 40.63 C86.67 40.63, 45.9 40.63, 0 40.63 M0 40.63 C0 29.96, 0 19.28, 0 0 M0 40.63 C0 25.69, 0 10.75, 0 0" stroke="#1971c2" stroke-width="2" fill="none"></path></g><g transform="translate(195.25723436648786 187.45705510803236) rotate(0 20.429977416992188 12.5)"><text x="20.429977416992188" y="19.08" font-family="Nunito, sans-serif, Segoe UI Emoji" font-size="20px" fill="#1971c2" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="alphabetic">Plan</text></g><g stroke-linecap="round"><g transform="translate(212.74251534602536 52.55696965975221) rotate(0 0.03208999318849237 22.231491200684104)"><path d="M0 0 C0.01 9.49, 0.03 18.98, 0.06 44.46 M0 0 C0.02 17.1, 0.05 34.19, 0.06 44.46" stroke="#1971c2" stroke-width="2" fill="none"></path></g><g transform="translate(212.74251534602536 52.55696965975221) rotate(0 0.03208999318849237 22.231491200684104)"><path d="M0.06 44.46 L-6.29 30.88 L6.38 30.86 L0.06 44.46" stroke="none" stroke-width="0" fill="#F0EBDE" fill-rule="evenodd"></path><path d="M0.06 44.46 C-1.29 41.56, -2.65 38.66, -6.29 30.88 M0.06 44.46 C-2.38 39.24, -4.83 34.01, -6.29 30.88 M-6.29 30.88 C-3.09 30.87, 0.11 30.87, 6.38 30.86 M-6.29 30.88 C-2.02 30.87, 2.25 30.87, 6.38 30.86 M6.38 30.86 C4.74 34.4, 3.09 37.95, 0.06 44.46 M6.38 30.86 C4.02 35.95, 1.65 41.04, 0.06 44.46 M0.06 44.46 C0.06 44.46, 0.06 44.46, 0.06 44.46 M0.06 44.46 C0.06 44.46, 0.06 44.46, 0.06 44.46" stroke="#1971c2" stroke-width="2" fill="none"></path></g></g><mask></mask><g stroke-linecap="round"><g transform="translate(214.9740614787088 141.22735364175242) rotate(0 0.03206405393075329 22.081251586530925)"><path d="M0 0 C0.02 17.13, 0.05 34.26, 0.06 44.16 M0 0 C0.02 11.42, 0.03 22.84, 0.06 44.16" stroke="#1971c2" stroke-width="2" fill="none"></path></g><g transform="translate(214.9740614787088 141.22735364175242) rotate(0 0.03206405393075329 22.081251586530925)"><path d="M0.06 44.16 L-6.29 30.58 L6.38 30.56 L0.06 44.16" stroke="none" stroke-width="0" fill="#F0EBDE" fill-rule="evenodd"></path><path d="M0.06 44.16 C-2.4 38.89, -4.87 33.62, -6.29 30.58 M0.06 44.16 C-1.58 40.65, -3.22 37.14, -6.29 30.58 M-6.29 30.58 C-3.14 30.57, 0.01 30.57, 6.38 30.56 M-6.29 30.58 C-2.24 30.57, 1.82 30.57, 6.38 30.56 M6.38 30.56 C4.72 34.13, 3.06 37.71, 0.06 44.16 M6.38 30.56 C4.06 35.56, 1.74 40.56, 0.06 44.16 M0.06 44.16 C0.06 44.16, 0.06 44.16, 0.06 44.16 M0.06 44.16 C0.06 44.16, 0.06 44.16, 0.06 44.16" stroke="#1971c2" stroke-width="2" fill="none"></path></g></g><mask></mask><g stroke-linecap="round"><g transform="translate(214.55339055907461 221.08972453984825) rotate(0 0.03206405393075329 22.081251586530925)"><path d="M0 0 C0.02 14.59, 0.04 29.18, 0.06 44.16 M0 0 C0.02 13.55, 0.04 27.09, 0.06 44.16" stroke="#1971c2" stroke-width="2" fill="none"></path></g><g transform="translate(214.55339055907461 221.08972453984825) rotate(0 0.03206405393075329 22.081251586530925)"><path d="M0.06 44.16 L-6.29 30.58 L6.38 30.56 L0.06 44.16" stroke="none" stroke-width="0" fill="#F0EBDE" fill-rule="evenodd"></path><path d="M0.06 44.16 C-2.04 39.67, -4.14 35.19, -6.29 30.58 M0.06 44.16 C-1.89 40, -3.84 35.83, -6.29 30.58 M-6.29 30.58 C-1.46 30.57, 3.38 30.56, 6.38 30.56 M-6.29 30.58 C-1.26 30.57, 3.78 30.56, 6.38 30.56 M6.38 30.56 C3.96 35.78, 1.53 41.01, 0.06 44.16 M6.38 30.56 C4.38 34.87, 2.38 39.17, 0.06 44.16 M0.06 44.16 C0.06 44.16, 0.06 44.16, 0.06 44.16 M0.06 44.16 C0.06 44.16, 0.06 44.16, 0.06 44.16" stroke="#1971c2" stroke-width="2" fill="none"></path></g></g><mask></mask><g transform="translate(295.08892324716635 67.93643405993134) rotate(0 34.50996398925781 12.5)"><text x="34.50996398925781" y="19.08" font-family="Nunito, sans-serif, Segoe UI Emoji" font-size="20px" fill="#1971c2" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="alphabetic">Explore</text></g><g transform="translate(290.2401796167542 148.1243241220327) rotate(0 40.13995361328125 12.5)"><text x="40.13995361328125" y="19.08" font-family="Nunito, sans-serif, Segoe UI Emoji" font-size="20px" fill="#1971c2" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="alphabetic">Planning</text></g><g transform="translate(274.41209032515053 232.44380357341652) rotate(0 41.489952087402344 12.5)"><text x="41.489952087402344" y="19.08" font-family="Nunito, sans-serif, Segoe UI Emoji" font-size="20px" fill="#1971c2" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="alphabetic">Generate</text></g><g stroke-linecap="round"><g transform="translate(210.135044264317 690.4642241417932) rotate(0 0.03206405393075329 22.081251586530925)"><path d="M0 0 C0.02 16.96, 0.05 33.92, 0.06 44.16 M0 0 C0.01 9.87, 0.03 19.75, 0.06 44.16" stroke="#1e1e1e" stroke-width="2" fill="none"></path></g><g transform="translate(210.135044264317 690.4642241417932) rotate(0 0.03206405393075329 22.081251586530925)"><path d="M0.06 44.16 L-6.29 30.58 L6.38 30.56 L0.06 44.16" stroke="none" stroke-width="0" fill="#F0EBDE" fill-rule="evenodd"></path><path d="M0.06 44.16 C-2.38 38.94, -4.82 33.73, -6.29 30.58 M0.06 44.16 C-1.36 41.13, -2.78 38.09, -6.29 30.58 M-6.29 30.58 C-1.57 30.57, 3.16 30.56, 6.38 30.56 M-6.29 30.58 C-1.63 30.57, 3.04 30.56, 6.38 30.56 M6.38 30.56 C4.4 34.83, 2.42 39.1, 0.06 44.16 M6.38 30.56 C4.74 34.09, 3.1 37.62, 0.06 44.16 M0.06 44.16 C0.06 44.16, 0.06 44.16, 0.06 44.16 M0.06 44.16 C0.06 44.16, 0.06 44.16, 0.06 44.16" stroke="#1e1e1e" stroke-width="2" fill="none"></path></g></g><mask></mask><g stroke-linecap="round" transform="translate(119.33974958034287 741.0888453777152) rotate(0 96.53646407582573 30)"><path d="M0 0 C52.62 0, 105.24 0, 193.07 0 M0 0 C52.18 0, 104.35 0, 193.07 0 M193.07 0 C193.07 13.97, 193.07 27.94, 193.07 60 M193.07 0 C193.07 17.24, 193.07 34.49, 193.07 60 M193.07 60 C129.9 60, 66.73 60, 0 60 M193.07 60 C131.42 60, 69.77 60, 0 60 M0 60 C0 40.68, 0 21.35, 0 0 M0 60 C0 47.91, 0 35.83, 0 0" stroke="#e03131" stroke-width="2" fill="none"></path></g><g transform="translate(183.83624325821893 758.5888453777152) rotate(0 32.03997039794922 12.5)"><text x="32.03997039794922" y="19.08" font-family="Nunito, sans-serif, Segoe UI Emoji" font-size="20px" fill="#e03131" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="alphabetic">Output</text></g><g transform="translate(288.23335525463153 701.7031194711817) rotate(0 35.549957275390625 12.5)"><text x="35.549957275390625" y="19.08" font-family="Nunito, sans-serif, Segoe UI Emoji" font-size="20px" fill="#000" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="alphabetic">Execute</text></g><g stroke-linecap="round"><g transform="translate(311.5137440406297 771.2491009661499) rotate(0 120.10655554330515 0.6936062186869094)"><path d="M0 0 C89.13 0.51, 178.26 1.03, 240.21 1.39 M0 0 C87.58 0.51, 175.15 1.01, 240.21 1.39" stroke="#e03131" stroke-width="2" fill="none"></path></g><g transform="translate(311.5137440406297 771.2491009661499) rotate(0 120.10655554330515 0.6936062186869094)"><path d="M240.21 1.39 L226.58 7.65 L226.66 -5.03 L240.21 1.39" stroke="none" stroke-width="0" fill="#F0EBDE" fill-rule="evenodd"></path><path d="M240.21 1.39 C235.16 3.71, 230.1 6.03, 226.58 7.65 M240.21 1.39 C235.24 3.67, 230.27 5.95, 226.58 7.65 M226.58 7.65 C226.61 2.75, 226.64 -2.15, 226.66 -5.03 M226.58 7.65 C226.6 4.62, 226.62 1.59, 226.66 -5.03 M226.66 -5.03 C229.88 -3.51, 233.1 -1.98, 240.21 1.39 M226.66 -5.03 C231.85 -2.57, 237.05 -0.11, 240.21 1.39 M240.21 1.39 C240.21 1.39, 240.21 1.39, 240.21 1.39 M240.21 1.39 C240.21 1.39, 240.21 1.39, 240.21 1.39" stroke="#e03131" stroke-width="2" fill="none"></path></g></g><mask></mask><g stroke-linecap="round"><g transform="translate(550.8354334165815 768.4245962200221) rotate(0 -1.0667012605063064 -350.9998025651166)"><path d="M0 0 C-0.49 -159.68, -0.97 -319.37, -2.13 -702 M0 0 C-0.57 -187.43, -1.14 -374.85, -2.13 -702" stroke="#e03131" stroke-width="2" fill="none"></path></g><g transform="translate(550.8354334165815 768.4245962200221) rotate(0 -1.0667012605063064 -350.9998025651166)"><path d="M-2.13 -702 L4.25 -688.42 L-8.43 -688.39 L-2.13 -702" stroke="none" stroke-width="0" fill="#F0EBDE" fill-rule="evenodd"></path><path d="M-2.13 -702 C-0.68 -698.91, 0.77 -695.82, 4.25 -688.42 M-2.13 -702 C-0.43 -698.38, 1.27 -694.75, 4.25 -688.42 M4.25 -688.42 C1.38 -688.42, -1.49 -688.41, -8.43 -688.39 M4.25 -688.42 C-0.05 -688.41, -4.35 -688.4, -8.43 -688.39 M-8.43 -688.39 C-6.51 -692.54, -4.59 -696.7, -2.13 -702 M-8.43 -688.39 C-6.77 -691.98, -5.1 -695.58, -2.13 -702 M-2.13 -702 C-2.13 -702, -2.13 -702, -2.13 -702 M-2.13 -702 C-2.13 -702, -2.13 -702, -2.13 -702" stroke="#e03131" stroke-width="2" fill="none"></path></g></g><mask></mask><g stroke-linecap="round" transform="translate(473.57721583051716 10) rotate(0 80.1954020428102 24.962311891989884)"><path d="M0 0 C36.15 0, 72.3 0, 160.39 0 M0 0 C45 0, 90 0, 160.39 0 M160.39 0 C160.39 14.33, 160.39 28.66, 160.39 49.92 M160.39 0 C160.39 15.79, 160.39 31.59, 160.39 49.92 M160.39 49.92 C106.89 49.92, 53.39 49.92, 0 49.92 M160.39 49.92 C98.64 49.92, 36.9 49.92, 0 49.92 M0 49.92 C0 32.88, 0 15.83, 0 0 M0 49.92 C0 38.08, 0 26.24, 0 0" stroke="#e03131" stroke-width="2" fill="none"></path></g><g transform="translate(527.5826459494992 22.462311891991703) rotate(0 26.189971923828125 12.5)"><text x="26.189971923828125" y="19.08" font-family="Nunito, sans-serif, Segoe UI Emoji" font-size="20px" fill="#e03131" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="alphabetic">Verify</text></g><g stroke-linecap="round"><g transform="translate(467.57721583051716 34.957800611035054) rotate(0 -92.59159197690406 -0.14666112089616945)"><path d="M0 0 C-59.28 -0.09, -118.56 -0.19, -185.18 -0.29 M0 0 C-40.26 -0.06, -80.53 -0.13, -185.18 -0.29" stroke="#e03131" stroke-width="2" fill="none"></path></g><g transform="translate(467.57721583051716 34.957800611035054) rotate(0 -92.59159197690406 -0.14666112089616945)"><path d="M-185.18 -0.29 L-171.58 -6.61 L-171.6 6.07 L-185.18 -0.29" stroke="none" stroke-width="0" fill="#F0EBDE" fill-rule="evenodd"></path><path d="M-185.18 -0.29 C-180.83 -2.32, -176.47 -4.34, -171.58 -6.61 M-185.18 -0.29 C-182.23 -1.67, -179.27 -3.04, -171.58 -6.61 M-171.58 -6.61 C-171.59 -2.53, -171.59 1.56, -171.6 6.07 M-171.58 -6.61 C-171.58 -3.13, -171.59 0.35, -171.6 6.07 M-171.6 6.07 C-175.2 4.38, -178.81 2.69, -185.18 -0.29 M-171.6 6.07 C-174.82 4.56, -178.04 3.05, -185.18 -0.29 M-185.18 -0.29 C-185.18 -0.29, -185.18 -0.29, -185.18 -0.29 M-185.18 -0.29 C-185.18 -0.29, -185.18 -0.29, -185.18 -0.29" stroke="#e03131" stroke-width="2" fill="none"></path></g></g><mask></mask><g transform="translate(36.067084825215716 61.40022759498606) rotate(0 34.469970703125 25)"><text x="34.469970703125" y="19.08" font-family="Nunito, sans-serif, Segoe UI Emoji" font-size="20px" fill="#1971c2" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="alphabetic">Coding </text><text x="34.469970703125" y="44.08" font-family="Nunito, sans-serif, Segoe UI Emoji" font-size="20px" fill="#1971c2" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="alphabetic">Agent</text></g><g transform="translate(26.657733318176724 283.3279231714405) rotate(0 40.799964904785156 12.5)"><text x="40.799964904785156" y="19.08" font-family="Nunito, sans-serif, Segoe UI Emoji" font-size="20px" fill="#1e1e1e" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="alphabetic">Compiler</text></g><g transform="translate(10 727.7941165806515) rotate(0 39.749961853027344 37.5)"><text x="39.749961853027344" y="19.08" font-family="Nunito, sans-serif, Segoe UI Emoji" font-size="20px" fill="#e03131" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="alphabetic">Sandbox</text><text x="39.749961853027344" y="44.08" font-family="Nunito, sans-serif, Segoe UI Emoji" font-size="20px" fill="#e03131" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="alphabetic">+</text><text x="39.749961853027344" y="69.08" font-family="Nunito, sans-serif, Segoe UI Emoji" font-size="20px" fill="#e03131" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="alphabetic">Reward</text></g><g transform="translate(75.43619055963336 837.99048145907) rotate(0 312.61962890625 25)"><text x="312.61962890625" y="19.08" font-family="Nunito, sans-serif, Segoe UI Emoji" font-size="20px" fill="#1971c2" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="alphabetic">Coding Agents are Compilers of Human Instructions to Machine Code</text><text x="312.61962890625" y="44.08" font-family="Nunito, sans-serif, Segoe UI Emoji" font-size="20px" fill="#1971c2" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="alphabetic">LLMs are an "IR"</text></g></svg>
+        </div>
+        <div class="src-txt">
+          <div class="src-eyebrow caption">From my notes</div>
+          <h2 class="src-title">A code harness runs two layers.</h2>
+          <p class="src-body">A model, and ordinary code: Python, Rust, famously bash. Line the agent up against a compiler and they map stage for stage. The weights are the <em>middle IR</em>. The harness is the <em>backend</em> that does the real work.</p>
+          <div class="src-cite">
+            <span class="src-cite-lab caption">All models learn the same things</span>
+            <span class="src-cite-ref">Universal Geometry of Embeddings &middot; arxiv.org/abs/2505.12540</span>
+          </div>
+        </div>
+      </div>
+      <div class="pagenum">03 / 8</div>
+    </section>
+
+
+    <!-- ACT II — CLAUDE AGENT SDK · one engine, four products -->
+    <section class="slide s-super hairlines">
+      <div class="topframe">
+        <div class="topbar">
+          <div class="h">A code harness is extremely reusable.</div>
+          <div class="lab-tag caption">One engine, four products</div>
+        </div>
+        <div class="diagram-stage">
+          <svg class="gsvg" viewBox="0 0 1200 420" preserveAspectRatio="xMidYMid meet" aria-label="One Claude Agent SDK engine feeding four products that differ only by their skills, tools, and system prompt">
+            <defs><marker id="sdk-ar" markerWidth="9" markerHeight="9" refX="6.2" refY="3" orient="auto"><path d="M0,0 L6.5,3 L0,6 Z" fill="#1F2BE0"/></marker></defs>
+            <rect x="560" y="64" width="600" height="312" fill="rgba(176,120,20,0.05)"/>
+            <rect x="44" y="184" width="176" height="120" rx="3" fill="rgba(31,43,224,0.07)" stroke="#1F2BE0" stroke-width="1.6"/>
+            <text x="132" y="234" text-anchor="middle" class="nlbl" font-size="19" fill="#1F2BE0">Claude Agent</text>
+            <text x="132" y="258" text-anchor="middle" class="nlbl" font-size="19" fill="#1F2BE0">SDK</text>
+            <text x="132" y="282" text-anchor="middle" font-size="11.5" fill="#1F2BE0" opacity="0.6">held constant</text>
+            <circle cx="280" cy="244" r="3.4" fill="#1F2BE0"/>
+            <g stroke="#1F2BE0" stroke-width="1.8" fill="none">
+              <path d="M220 244 H280"/>
+              <path d="M280 244 L354 150" marker-end="url(#sdk-ar)"/>
+              <path d="M280 244 L354 213" marker-end="url(#sdk-ar)"/>
+              <path d="M280 244 L354 276" marker-end="url(#sdk-ar)"/>
+              <path d="M280 244 L354 339" marker-end="url(#sdk-ar)"/>
+            </g>
+            <text x="860" y="44" text-anchor="middle" font-size="14" fill="#B07814" letter-spacing="1">config &#183; the only thing that changes</text>
+            <path d="M560 76 L560 64 L1160 64 L1160 76" fill="none" stroke="#B07814" stroke-width="1.4"/>
+            <g font-size="13" fill="#B07814" letter-spacing="2" text-anchor="middle">
+              <text x="660" y="104">SKILLS</text>
+              <text x="860" y="104">TOOLS</text>
+              <text x="1060" y="104">PROMPT</text>
+            </g>
+            <line x1="360" y1="118" x2="1160" y2="118" stroke="#1F2BE0" stroke-width="1.4"/>
+            <g stroke="rgba(31,43,224,0.20)" stroke-width="1">
+              <line x1="560" y1="64" x2="560" y2="376"/>
+              <line x1="760" y1="88" x2="760" y2="376"/>
+              <line x1="960" y1="88" x2="960" y2="376"/>
+              <line x1="360" y1="181" x2="1160" y2="181"/>
+              <line x1="360" y1="244" x2="1160" y2="244"/>
+              <line x1="360" y1="307" x2="1160" y2="307"/>
+            </g>
+            <g class="nlbl" font-size="16" fill="#1F2BE0">
+              <text x="372" y="155">Claude Code</text>
+              <text x="372" y="218">Claude Design</text>
+              <text x="372" y="281">Claude in Chrome</text>
+              <text x="372" y="344">Claude Cowork</text>
+            </g>
+            <g font-size="13" fill="#1F2BE0" text-anchor="middle">
+              <text x="660" y="155">code, refactor</text>
+              <text x="860" y="155">shell, files, git</text>
+              <text x="1060" y="155">pair-programmer</text>
+              <text x="660" y="218">layout, visual</text>
+              <text x="860" y="218">canvas, components</text>
+              <text x="1060" y="218">designer</text>
+              <text x="660" y="281">web tasks</text>
+              <text x="860" y="281">browser, DOM</text>
+              <text x="1060" y="281">operator</text>
+              <text x="660" y="344">office, comms</text>
+              <text x="860" y="344">docs, calendar</text>
+              <text x="1060" y="344">teammate</text>
+            </g>
+          </svg>
+        </div>
+        <div class="diag-caption">
+          <div class="dc-lead">One engine, four products. Only the configuration changes.</div>
+          <div class="dc-sub">Same compiler, different passes. Skills, tools, and the system prompt are the variables. The SDK underneath is held constant.</div>
+        </div>
+      </div>
+      <div class="pagenum">04 / 8</div>
+    </section>
+
+
+
+    <!-- ACT II — THE FOURTH RESOURCE ─────────────────────────────────── -->
+    <section class="slide s-fourth hairlines">
+      <div class="topframe">
+        <div class="topbar">
+          <div class="h">Harness ties the new to the known.</div>
+          <div class="lab-tag caption">What backend engineering manages</div>
+        </div>
+        <div class="res-row">
+          <div class="res">
+            <div class="gtop">
+              <svg class="glyph" viewBox="0 0 64 64" fill="none" stroke="#1F2BE0" stroke-width="2.4" stroke-linecap="round">
+                <circle cx="14" cy="16" r="6"/><circle cx="50" cy="16" r="6"/><circle cx="32" cy="48" r="6"/>
+                <line x1="20" y1="16" x2="44" y2="16"/><line x1="17" y1="21" x2="29" y2="43"/><line x1="47" y1="21" x2="35" y2="43"/>
+              </svg>
+              <span class="idx">01</span>
+            </div>
+            <div class="rlabel">Network</div>
+            <div class="rmeta">Move the bytes.</div>
+          </div>
+          <div class="res">
+            <div class="gtop">
+              <svg class="glyph" viewBox="0 0 64 64" fill="none" stroke="#1F2BE0" stroke-width="2.4" stroke-linecap="round">
+                <rect x="20" y="20" width="24" height="24" rx="2"/><rect x="28" y="28" width="8" height="8" rx="1"/>
+                <line x1="27" y1="14" x2="27" y2="20"/><line x1="37" y1="14" x2="37" y2="20"/>
+                <line x1="27" y1="44" x2="27" y2="50"/><line x1="37" y1="44" x2="37" y2="50"/>
+                <line x1="14" y1="27" x2="20" y2="27"/><line x1="14" y1="37" x2="20" y2="37"/>
+                <line x1="44" y1="27" x2="50" y2="27"/><line x1="44" y1="37" x2="50" y2="37"/>
+              </svg>
+              <span class="idx">02</span>
+            </div>
+            <div class="rlabel">Compute</div>
+            <div class="rmeta">Run the work.</div>
+          </div>
+          <div class="res">
+            <div class="gtop">
+              <svg class="glyph" viewBox="0 0 64 64" fill="none" stroke="#1F2BE0" stroke-width="2.4" stroke-linecap="round">
+                <ellipse cx="32" cy="18" rx="16" ry="6"/>
+                <path d="M16 18 V46 A16 6 0 0 0 48 46 V18"/>
+                <path d="M16 32 A16 6 0 0 0 48 32"/>
+              </svg>
+              <span class="idx">03</span>
+            </div>
+            <div class="rlabel">Storage</div>
+            <div class="rmeta">Keep the state.</div>
+          </div>
+          <div class="res new">
+            <div class="gtop">
+              <svg class="glyph" viewBox="0 0 64 64" fill="none" stroke="#B07814" stroke-width="2.4" stroke-linecap="round">
+                <circle cx="32" cy="32" r="6.5" fill="#B07814" stroke="none"/>
+                <line x1="32" y1="21" x2="32" y2="12"/><line x1="32" y1="43" x2="32" y2="52"/>
+                <line x1="21" y1="32" x2="12" y2="32"/><line x1="43" y1="32" x2="52" y2="32"/>
+                <line x1="24.5" y1="24.5" x2="18" y2="18"/><line x1="39.5" y1="24.5" x2="46" y2="18"/>
+                <line x1="24.5" y1="39.5" x2="18" y2="46"/><line x1="39.5" y1="39.5" x2="46" y2="46"/>
+              </svg>
+              <span class="idx">04 &middot; NEW</span>
+            </div>
+            <div class="rlabel">Intelligence</div>
+            <div class="rmeta">Decide what to do.</div>
+          </div>
+        </div>
+        <div class="fourth-cap">For decades, backend engineering meant managing three resources: network, compute, storage. <b>Intelligence is the fourth.</b> It is metered, it scales and throttles, and it fails in new ways. The harness is how you manage it.</div>
+      </div>
+      <div class="pagenum">05 / 9</div>
+    </section>
+
+
+
+    <!-- COMMON HARNESS LOOPS -->
+    <section class="slide s-index hairlines">
+      <svg class="lp-defs" width="0" height="0" aria-hidden="true" style="position:absolute">
+        <defs>
+          <marker id="lp-ink" markerWidth="7" markerHeight="7" refX="4.4" refY="2.4" orient="auto"><path d="M0,0 L5,2.4 L0,4.8 Z" fill="#1F2BE0"/></marker>
+          <marker id="lp-amb" markerWidth="7" markerHeight="7" refX="4.4" refY="2.4" orient="auto"><path d="M0,0 L5,2.4 L0,4.8 Z" fill="#B07814"/></marker>
+        </defs>
+      </svg>
+      <div class="frame">
+        <div class="topbar">
+          <div class="h">Common harness loops.</div>
+          <div class="lab-tag caption">Each one, what it does</div>
+        </div>
+        <div class="list">
+          <div class="row">
+            <div class="num-tag caption">01.</div>
+            <div>
+              <div class="rhead">
+                <h3>Agent loop</h3>
+                <svg class="loopdiag" viewBox="0 0 130 56" fill="none" aria-label="A tight self-loop">
+                  <circle cx="65" cy="29" r="8" fill="rgba(31,43,224,0.14)" stroke="#1F2BE0" stroke-width="1.6"/>
+                  <path class="flow" d="M65,8 A21,21 0 1 1 60,8.6" stroke="#1F2BE0" stroke-width="1.6" marker-end="url(#lp-ink)"/>
+                </svg>
+              </div>
+              <p class="ed-meta caption">the model calls tools until done</p>
+              <p>The model calls tools until the task is done. It is the tightest cycle, and everyone already ships it.</p>
+              <div class="ex"><span class="lead">e.g.</span> <code>/goal</code> &#183; <code>/loop</code></div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="num-tag caption">02.</div>
+            <div>
+              <div class="rhead">
+                <h3>Verification loop</h3>
+                <svg class="loopdiag" viewBox="0 0 130 56" fill="none" aria-label="Generate to grader with a feedback back-edge">
+                  <rect x="10" y="18" width="38" height="22" rx="3" fill="rgba(31,43,224,0.06)" stroke="#1F2BE0" stroke-width="1.6"/>
+                  <rect x="82" y="18" width="38" height="22" rx="3" fill="rgba(31,43,224,0.06)" stroke="#1F2BE0" stroke-width="1.6"/>
+                  <text x="29" y="32">gen</text>
+                  <text x="101" y="32">grade</text>
+                  <path class="flow" d="M48,24 H79" stroke="#1F2BE0" stroke-width="1.6" marker-end="url(#lp-ink)"/>
+                  <path class="flow" d="M82,34 H51" stroke="#B07814" stroke-width="1.6" marker-end="url(#lp-amb)"/>
+                </svg>
+              </div>
+              <p class="ed-meta caption">a grader scores, then feeds back</p>
+              <p>A grader scores the output against a rubric. If it falls short, it goes back with feedback. The grader can be code or another model.</p>
+              <div class="ex"><span class="lead">in</span> test suites, LLM-as-judge</div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="num-tag caption">03.</div>
+            <div>
+              <div class="rhead">
+                <h3>Event-driven loop</h3>
+                <svg class="loopdiag" viewBox="0 0 130 56" fill="none" aria-label="An external trigger firing the agent">
+                  <g stroke="#B07814" stroke-width="1.6" stroke-linecap="round">
+                    <line x1="22" y1="19" x2="22" y2="12"/>
+                    <line x1="22" y1="39" x2="22" y2="46"/>
+                    <line x1="13" y1="29" x2="6" y2="29"/>
+                    <line x1="16" y1="23" x2="11" y2="18"/>
+                    <line x1="28" y1="23" x2="33" y2="18"/>
+                    <line x1="16" y1="35" x2="11" y2="40"/>
+                  </g>
+                  <circle cx="22" cy="29" r="3" fill="#B07814"/>
+                  <rect x="64" y="15" width="54" height="28" rx="3" fill="rgba(31,43,224,0.06)" stroke="#1F2BE0" stroke-width="1.6"/>
+                  <text x="91" y="32">agent</text>
+                  <path class="flow" d="M34,29 H62" stroke="#B07814" stroke-width="1.6" marker-end="url(#lp-amb)"/>
+                </svg>
+              </div>
+              <p class="ed-meta caption">a trigger from outside fires it</p>
+              <p>An event fires and the agent runs on its own. Now it is a component inside a larger system, not a tool you poke.</p>
+              <div class="ex"><span class="lead">in</span> Claude Code's dreaming, agent memory</div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="num-tag caption">04.</div>
+            <div>
+              <div class="rhead">
+                <h3>Hill-climbing loop</h3>
+                <svg class="loopdiag" viewBox="0 0 130 56" fill="none" aria-label="Climbing ascending steps, rewriting the passes">
+                  <path d="M8,46 H32 V36 H56 V26 H80 V16 H104" stroke="#1F2BE0" stroke-width="1.6"/>
+                  <path class="flow" d="M12,44 Q60,40 102,15" stroke="#B07814" stroke-width="1.6" marker-end="url(#lp-amb)"/>
+                </svg>
+              </div>
+              <p class="ed-meta caption">it points at the passes, between runs</p>
+              <p>It does not return to a node. It points at the passes: an analysis agent reads the traces and rewrites the harness itself.</p>
+              <div class="ex"><span class="lead">in</span> Karpathy's autoresearch,
+                <svg class="logo" viewBox="0 0 32 32" role="img" aria-label="EVO"><rect width="32" height="32" rx="7" fill="#09090b"/><text x="2" y="24" font-family="Inter, 'Hanken Grotesk', sans-serif" font-weight="700" font-size="18" letter-spacing="-0.8" fill="#fafafa">ev</text><circle cx="26" cy="19.644" r="5.445" fill="#FF6A2A"/></svg>
+                EVO, <a class="ref" href="https://yoonholee.com/meta-harness/" target="_blank" rel="noopener">Meta Harness</a></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pagenum">05 / 8</div>
+    </section>
+
+
+
+
+
+
+
+    <!-- 12. BRIDGE — split the loops by what they return ───────── -->
+    <section class="slide s-split hairlines">
+      <div class="topframe">
+        <div class="topbar">
+          <div class="h">Auto harness.</div>
+          <div class="lab-tag caption">Generate the harness itself</div>
+        </div>
+        <div class="split-body">
+          <div class="panel">
+            <div class="ptag caption">Loops 1 to 3</div>
+            <div class="phead">Automate work.</div>
+            <div class="pbody">They run the machine. A better model lifts them once, and then you are back where you started.</div>
+            <div class="pex"><div class="pex-lab caption">Example</div><div class="pex-item">A new model. A one-time bump.</div><div class="pex-sub">Then flat again until the next release.</div></div>
+            <div class="pfoot caption">Linear. Bound to the model.</div>
+          </div>
+          <div class="panel">
+            <div class="ptag caption">Loop 4</div>
+            <div class="phead">Automate improvement.</div>
+            <div class="pbody">Every run leaves a trace. The analysis reads the traces and rewrites the harness. The trace is the fuel, and the data-and-trace box was the asset the whole time.</div>
+            <div class="pex"><div class="pex-lab caption">Example</div><div class="pex-item">Traces in. A better harness out.</div><div class="pex-sub">Compounds every run, free of the model.</div></div>
+            <div class="pfoot caption">Compounding. Free of the model.</div>
+          </div>
+        </div>
+        <div class="split-foot"><b>Auto harness:</b> a smaller model that synthesizes a custom harness, or the whole policy, can outperform a much larger model, and at lower cost. <b>arxiv.org/abs/2603.03329</b></div>
+      </div>
+      <div class="pagenum">06 / 8</div>
+    </section>
+
+    <!-- 13. COLOPHON / CLOSE ───────────────────────────────────── -->
+    <!-- ACT II — VIDEO DEMO · @anshuc ──────────────────────────────── -->
+    <section class="slide s-video hairlines">
+      <div class="topframe">
+        <div class="topbar">
+          <div class="h">Frontier minus one is enough.</div>
+          <div class="lab-tag caption">In the wild · @anshuc</div>
+        </div>
+        <div class="video-stage">
+          <video src="anshuc-video-web.mp4" controls loop playsinline preload="metadata"></video>
+        </div>
+        <div class="diag-caption">
+          <div class="dc-lead">Strong UI from GLM-5.2, a model a full tier below the frontier.</div>
+          <div class="dc-sub">Opus competes with Fable. GLM-5.2 does what Opus can. Wrap the right harness around last season's model and the output still holds, so the model becomes the rented part. Clip: @anshuc, GLM-5.2.</div>
+        </div>
+      </div>
+      <div class="pagenum">07 / 8</div>
+    </section>
+
+    <!-- 10. FUNNEL — the verifier is the ceiling ───────────────── -->
+    <section class="slide s-funnel hairlines">
+      <div class="topframe">
+        <div class="topbar">
+          <div class="h">Reward and verification set the output shape.</div>
+          <div class="lab-tag caption">The verifier sets the cap</div>
+        </div>
+        <div class="funnel-wrap">
+          <div class="funnel-svg">
+          <svg class="funnel" viewBox="0 0 1200 440" preserveAspectRatio="xMidYMid meet" aria-label="A near-infinite output space narrowed by a verifier slit into a thin reliable band">
+            <polygon points="120,230 520,90 520,370" fill="rgba(31,43,224,0.06)"/>
+            <g stroke="rgba(31,43,224,0.22)" stroke-width="1">
+              <line x1="120" y1="230" x2="520" y2="90"/>
+              <line x1="120" y1="230" x2="520" y2="118"/>
+              <line x1="120" y1="230" x2="520" y2="146"/>
+              <line x1="120" y1="230" x2="520" y2="174"/>
+              <line x1="120" y1="230" x2="520" y2="202"/>
+              <line x1="120" y1="230" x2="520" y2="230"/>
+              <line x1="120" y1="230" x2="520" y2="258"/>
+              <line x1="120" y1="230" x2="520" y2="286"/>
+              <line x1="120" y1="230" x2="520" y2="314"/>
+              <line x1="120" y1="230" x2="520" y2="342"/>
+              <line x1="120" y1="230" x2="520" y2="370"/>
+            </g>
+            <rect x="540" y="70"  width="26" height="130" fill="#1F2BE0"/>
+            <rect x="540" y="260" width="26" height="130" fill="#1F2BE0"/>
+            <line x1="553" y1="40" x2="553" y2="66" stroke="#1F2BE0" stroke-width="1.5"/>
+            <text x="553" y="30" text-anchor="middle" font-family="'DM Mono',monospace" font-size="14" fill="#1F2BE0" letter-spacing="3">VERIFIER</text>
+            <polygon points="566,218 566,242 1080,250 1080,210" fill="rgba(31,43,224,0.10)"/>
+            <g stroke="#1F2BE0" stroke-width="1.8">
+              <line x1="566" y1="224" x2="1080" y2="214"/>
+              <line x1="566" y1="230" x2="1080" y2="230"/>
+              <line x1="566" y1="236" x2="1080" y2="246"/>
+            </g>
+            <text x="120" y="408" font-family="'DM Mono',monospace" font-size="14" fill="#1F2BE0" opacity="0.6">model output space, near-infinite variety</text>
+            <text x="1080" y="196" text-anchor="end" font-family="'DM Mono',monospace" font-size="14" fill="#1F2BE0">reliable output</text>
+          </svg>
+          </div>
+          <div class="fnote">
+            <div>
+              <div class="ftag caption">Requisite variety</div>
+              <div class="fcap">The slit width is your reliability ceiling.</div>
+            </div>
+            <div class="fbody">An LLM's output variety is effectively unbounded. Reward and verification are the slit it passes through, so they set the shape of what comes out. <b>Widen the slit and the ceiling lifts; narrow it and you just automate being wrong, faster.</b></div>
+          </div>
+        </div>
+      </div>
+      <div class="pagenum">08 / 8</div>
+    </section>
+
+    <!-- TRANSITION — END OF ACT II → ACT III ──────────────────────── -->
+    <section class="slide s-divider">
+      <div class="dpx" aria-hidden="true">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+          <defs><pattern id="dpxB" width="2.4" height="100" patternUnits="userSpaceOnUse"><line x1="0.5" y1="0" x2="0.5" y2="100" stroke="#F0EBDE" stroke-width="1.0"/></pattern></defs>
+          <rect x="36" y="0"  width="38" height="14" fill="url(#dpxB)"/>
+          <rect x="22" y="14" width="50" height="12" fill="url(#dpxB)"/>
+          <rect x="34" y="26" width="46" height="11" fill="url(#dpxB)"/>
+          <rect x="16" y="37" width="60" height="13" fill="url(#dpxB)"/>
+          <rect x="28" y="50" width="48" height="11" fill="url(#dpxB)"/>
+          <rect x="18" y="61" width="62" height="14" fill="url(#dpxB)"/>
+          <rect x="34" y="75" width="44" height="12" fill="url(#dpxB)"/>
+          <rect x="22" y="87" width="50" height="13" fill="url(#dpxB)"/>
+        </svg>
+      </div>
+      <div class="dframe">
+        <div class="deyebrow">Act III</div>
+        <h2 class="dtitle">Reward is<br/>All You Need.</h2>
+        <div class="dsub">Own the loop. Don't rent the model.</div>
+      </div>
+    </section>
+
+    <!-- ACT II CLOSER — REWARD IS ALL YOU NEED · observation ─────── -->
+    <section class="slide s-split hairlines">
+      <div class="topframe">
+        <div class="topbar">
+          <div class="h">Two kinds of team.</div>
+          <div class="lab-tag caption">Observation</div>
+        </div>
+        <div class="split-body">
+          <div class="panel">
+            <div class="ptag caption">Prompt-agent teams</div>
+            <div class="phead">Stay flat.</div>
+            <div class="pbody">They re-tune their prompts on every frontier release and land back where they started. The work resets each time a new model ships.</div>
+            <div class="pex"><div class="pex-lab caption">Example</div><div class="pex-item">You, on Claude Code.</div><div class="pex-sub">Re-tuning prompts by hand on every new model.</div></div>
+            <div class="pfoot caption">Flat across releases.</div>
+          </div>
+          <div class="panel">
+            <div class="ptag caption">Winning teams</div>
+            <div class="phead">Compound.</div>
+            <div class="pbody">They build off accumulated traces and reward loops. Every run feeds the next, so each release lifts a system that was already climbing.</div>
+            <div class="pex"><div class="pex-lab caption">Examples</div><div class="pex-item">Anthropic. Devin.</div><div class="pex-sub">Systems that learn from your traces and improve on their own.</div></div>
+            <div class="pfoot caption">Compounding across releases.</div>
+          </div>
+        </div>
+      </div>
+      <div class="pagenum">Act III</div>
+    </section>
+
+    <!-- ACT III — a simple loop (Nirant's own work) -->
+    <section class="slide s-chapter hairlines">
+      <div class="pixel-glitch" aria-hidden="true">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+          <defs><pattern id="vsLoop" width="2.4" height="100" patternUnits="userSpaceOnUse"><line x1="0.5" y1="0" x2="0.5" y2="100" stroke="#1F2BE0" stroke-width="1.0"/></pattern></defs>
+          <rect x="36" y="0"  width="38" height="14" fill="url(#vsLoop)"/>
+          <rect x="22" y="14" width="50" height="12" fill="url(#vsLoop)"/>
+          <rect x="34" y="26" width="46" height="11" fill="url(#vsLoop)"/>
+          <rect x="16" y="37" width="60" height="13" fill="url(#vsLoop)"/>
+          <rect x="28" y="50" width="48" height="11" fill="url(#vsLoop)"/>
+          <rect x="18" y="61" width="62" height="14" fill="url(#vsLoop)"/>
+          <rect x="34" y="75" width="44" height="12" fill="url(#vsLoop)"/>
+          <rect x="22" y="87" width="50" height="13" fill="url(#vsLoop)"/>
+        </svg>
+      </div>
+      <div class="frame">
+        <div class="nm-tag">From my own work &middot; x.com/NirantK</div>
+        <div class="ttl">A simple loop,<br/>doing real work.</div>
+        <div class="lede">Before we swap models, one example of my own. Not an elaborate harness. One small loop: generate, then check, run well. That alone already carries the result. Which sets up the next slide. If the loop carries the quality, how much does the model underneath still matter?</div>
+      </div>
+      <div class="pagenum">Act III</div>
+    </section>
+
+    <!-- ACT III — REWARD IS ALL YOU NEED · proof ─────────────────── -->
+    <section class="slide s-proof hairlines">
+      <div class="topframe">
+        <div class="topbar">
+          <div class="h">The model is interchangeable.</div>
+          <div class="lab-tag caption">Act III · same harness, five models</div>
+        </div>
+        <div class="proof-stage">
+          <img src="5-models-same-harness-different-config.jpeg" alt="Five mobile landing pages built by Sonnet 4.6, Kimi 2.6, GLM-5, GPT-5 and Minimax-2.7 from one harness with per-model skills" />
+        </div>
+        <div class="diag-caption">
+          <div class="dc-lead">One harness. Five models, each skill-tuned to its strengths. All five ship.</div>
+          <div class="dc-sub">Swap the model and the output holds, because the reward signal and the harness carry the quality. The model is the rented part.</div>
+        </div>
+      </div>
+      <div class="pagenum">Act III</div>
+    </section>
+
+    <!-- ACT III — swyx Loopcraft (quote + diagram) -->
+    <section class="slide s-pq with-fig hairlines">
+      <div class="pq-frame">
+        <div class="pq-fig">
+          <img src="loopcraft.jpg" alt="swyx's Loopcraft diagram: nested loops from tokens to turns to tasks to teams" />
+        </div>
+        <div class="pq-col">
+          <div class="pq-mark" aria-hidden="true">&#8220;</div>
+          <div class="pq-kicker">@swyx &middot; Loopcraft: the art of stacking loops</div>
+          <p class="pq-body med">One might argue the entire game of the next century is to stack loops as effectively as possible. It is valuable to know when to go <span class="hl">DOWN</span> a loop when things go wrong, but more valuable to know how to go <span class="hl">UP</span> a loop as models improve. If you don't figure this out, don't be salty when you lose to those who do.</p>
+          <div class="pq-attr"><span class="pq-name">@swyx</span><span class="pq-role">latent.space/p/ainews-loopcraft-the-art-of-stacking</span></div>
+        </div>
+      </div>
+      <div class="pagenum">Act III</div>
+    </section>
+
+    <!-- CLOSING — Nadella, solid cobalt, thanks + contact -->
+    <section class="slide s-close">
+      <div class="close-frame">
+        <div class="close-kicker">Thank you</div>
+        <div class="close-mark" aria-hidden="true">&#8220;</div>
+        <p class="close-quote">A company should be able to switch out a <span class="hl">'generalist' model</span> without losing the <span class="hl">'company veteran' expertise</span> built into their learning system. This is the key 'test' of your control and sovereignty in the era ahead.</p>
+        <div class="close-attr"><span class="close-name">Satya Nadella</span><span class="close-role">Chairman &amp; CEO, Microsoft &middot; x.com/satyanadella/status/2066182223213293753</span></div>
+        <div class="close-contact">
+          <span class="ct lead">Own the loop.</span>
+          <span class="ct">Nirant Kasliwal</span>
+          <span class="ct">Scaled Focus</span>
+          <span class="ct">nirantk.com</span>
+          <span class="ct">@nirantk</span>
+        </div>
+      </div>
+      <div class="pagenum">Fin</div>
+    </section>
+
+
+
+
+
+
+
+
+  </div>
+</div>
+
+<div class="caption nav-hint">← / → · space</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  let current = 0;
+  function show(i) {
+    if (i < 0) i = 0;
+    if (i > slides.length - 1) i = slides.length - 1;
+    slides[current].classList.remove('active');
+    slides[i].classList.add('active');
+    current = i;
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); show(current + 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp')               { e.preventDefault(); show(current - 1); }
+    else if (e.key === 'Home')                                            { e.preventDefault(); show(0); }
+    else if (e.key === 'End')                                             { e.preventDefault(); show(slides.length - 1); }
+  });
+  let tx = null;
+  document.addEventListener('touchstart', (e) => { tx = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    if (tx == null) return;
+    const dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 40) show(current + (dx < 0 ? 1 : -1));
+    tx = null;
+  });
+</script>
+
+</body>
+</html>
