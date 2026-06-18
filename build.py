@@ -71,6 +71,11 @@ EXTRA_CSS = """
   .s-open .ocap { color: var(--paper); opacity: 0.6; }
   .s-open .obyline { border-top-color: var(--paper); }
   .s-open .pagenum { color: var(--paper); opacity: 0.6; }
+  .s-agenda .ag-list { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: clamp(16px, 2.6vh, 38px); margin-top: clamp(16px, 2.4vh, 34px); }
+  .s-agenda .ag-item { display: grid; grid-template-columns: clamp(46px, 5vw, 82px) 1fr; gap: clamp(18px, 2.4vw, 42px); align-items: baseline; border-bottom: 1px solid rgba(31,43,224,0.18); padding-bottom: clamp(14px, 2vh, 26px); }
+  .s-agenda .ag-num { font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(15px, 1.3vw, 22px); color: var(--ink); opacity: 0.5; }
+  .s-agenda .ag-title { font-family: 'Newsreader', Georgia, serif; font-size: clamp(28px, min(3.2vw, 5.4vh), 56px); line-height: 1.04; letter-spacing: -0.005em; color: var(--ink); }
+  .s-agenda .ag-sub { font-family: 'Hanken Grotesk', sans-serif; font-size: clamp(14px, 1vw, 17px); line-height: 1.45; color: var(--ink); opacity: 0.8; margin-top: 6px; }
 """
 
 OPENING_SLIDE = """
@@ -145,7 +150,6 @@ DIVIDER_ACT2 = """
         </svg>
       </div>
       <div class="dframe">
-        <div class="deyebrow">Act II</div>
         <h2 class="dtitle">Coding Agents<br/>are Compilers.</h2>
         <div class="dsub">An agent compiles human instructions into machine code.</div>
       </div>
@@ -197,7 +201,6 @@ CONNECTOR_SLIDE = """
         <p class="stmt">The model is the smallest box, and it should keep getting smaller. Everything that matters is the harness around it. That <span class="amb">model</span> + <span class="amb">harness</span> = <span class="amb">agent</span>.</p>
         <div class="attr">
           <div class="who caption">The bridge</div>
-          <div class="meta-tag caption">Act I &#8594; Act II</div>
         </div>
       </div>
       <div class="pagenum">Act I &#8594; II</div>
@@ -249,9 +252,27 @@ WHATIS_SLIDE = """
     </section>
 """
 
+AGENDA_SLIDE = """
+    <!-- ACT I — AGENDA -->
+    <section class="slide s-agenda hairlines">
+      <div class="topframe">
+        <div class="topbar">
+          <div class="h">Today.</div>
+          <div class="lab-tag caption">Two ideas, and the loops</div>
+        </div>
+        <div class="ag-list">
+          <div class="ag-item"><div class="ag-num">01</div><div><div class="ag-title">What is a harness?</div><div class="ag-sub">The code around the model, and why it is the work.</div></div></div>
+          <div class="ag-item"><div class="ag-num">02</div><div><div class="ag-title">Coding agents are compilers.</div><div class="ag-sub">Why that framing pays off, and what it tells you to build.</div></div></div>
+          <div class="ag-item"><div class="ag-num">03</div><div><div class="ag-title">The loops.</div><div class="ag-sub">The cycles that run through most harnesses.</div></div></div>
+        </div>
+      </div>
+      <div class="pagenum"></div>
+    </section>
+"""
+
 deck = deck.replace("</style>", EXTRA_CSS + "</style>", 1)
 deck = deck.replace("slide s-cover hairlines active", "slide s-cover hairlines", 1)
-deck = deck.replace('<div class="stage">', '<div class="stage">\n' + OPENING_SLIDE + ABOUT_SLIDE + WHATIS_SLIDE + FOURTH_IN_ACT1 + OVERLAY_SLIDE + CONNECTOR_SLIDE + DIVIDER_ACT2, 1)
+deck = deck.replace('<div class="stage">', '<div class="stage">\n' + OPENING_SLIDE + ABOUT_SLIDE + AGENDA_SLIDE + WHATIS_SLIDE + FOURTH_IN_ACT1 + OVERLAY_SLIDE + CONNECTOR_SLIDE + DIVIDER_ACT2, 1)
 deck = deck.replace("</body>", OVERLAY_JS + "\n</body>", 1)
 deck = deck.replace("__HORSE__", horse_b64).replace("__MLDEBT__", png_b64).replace("__AGENTDEBT__", svg_b64)
 deck = deck.replace('src="5-models-same-harness-different-config.jpeg"', 'src="data:image/jpeg;base64,' + jpg_b64 + '"')
