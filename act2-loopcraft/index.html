@@ -347,6 +347,14 @@
   .s-flywheel .fw-fig .fwlbl { font-family:'Hanken Grotesk',sans-serif; font-weight:700; font-size:14px; fill:var(--ink); text-anchor:middle; }
   .s-flywheel .fw-fig .fwsub { font-family:'DM Mono',ui-monospace,monospace; font-size:10px; fill:var(--amber); text-anchor:middle; }
   .s-flywheel .fw-fig .fwleg { font-family:'DM Mono',ui-monospace,monospace; font-size:10.5px; }
+  .s-autoh .ah-body { flex:1; min-height:0; display:grid; grid-template-columns: 0.85fr 1.15fr; gap: clamp(22px,2.8vw,52px); align-items:center; margin-top: clamp(12px,1.8vh,24px); }
+  .s-autoh .ah-fig { display:flex; flex-direction:column; gap: clamp(7px,1.1vh,12px); min-height:0; margin:0; }
+  .s-autoh .ah-tag { font-family:'Hanken Grotesk',sans-serif; font-weight:600; text-transform:uppercase; letter-spacing:0.14em; font-size:clamp(11px,0.82vw,13px); color:var(--ink); opacity:0.7; }
+  .s-autoh .ah-fig img { width:100%; max-height:46vh; object-fit:contain; display:block; border:1.5px solid var(--ink); border-radius:3px; background:#fff; cursor:zoom-in; }
+  .zoom-overlay { position:fixed; inset:0; background:rgba(12,14,24,0.93); z-index:200; display:flex; align-items:center; justify-content:center; cursor:zoom-out; padding:3vmin; animation: zoomFade 160ms ease; }
+  .zoom-overlay img { max-width:96vw; max-height:94vh; object-fit:contain; border-radius:4px; box-shadow:0 0 0 1px rgba(255,255,255,0.12), 0 20px 60px rgba(0,0,0,0.5); animation: zoomIn 200ms ease; }
+  @keyframes zoomFade { from { opacity:0; } }
+  @keyframes zoomIn { from { opacity:0; transform: scale(0.965); } }
 </style>
 </head>
 <body>
@@ -778,31 +786,25 @@
 
 
     <!-- 12. BRIDGE — split the loops by what they return ───────── -->
-    <section class="slide s-split hairlines">
+    <section class="slide s-split s-autoh hairlines">
       <div class="topframe">
         <div class="topbar">
           <div class="h">Auto harness.</div>
-          <div class="lab-tag caption">Generate the harness itself</div>
+          <div class="lab-tag caption">Run the work, then improve the harness</div>
         </div>
-        <div class="split-body">
-          <div class="panel">
-            <div class="ptag caption">Loops 1 to 3</div>
-            <div class="phead">Automate work.</div>
-            <div class="pbody">They run the machine. A better model lifts them once, and then you are back where you started.</div>
-            <div class="pex"><div class="pex-lab caption">Example</div><div class="pex-item">A new model. A one-time bump.</div><div class="pex-sub">Then flat again until the next release.</div></div>
-            <div class="pfoot caption">Linear. Bound to the model.</div>
-          </div>
-          <div class="panel">
-            <div class="ptag caption">Loop 4</div>
-            <div class="phead">Automate improvement.</div>
-            <div class="pbody">Every run leaves a trace. The analysis reads the traces and rewrites the harness. The trace is the fuel, and the data-and-trace box was the asset the whole time.</div>
-            <div class="pex"><div class="pex-lab caption">Examples</div><div class="pex-item">Meta Harness. Dream, for memory.</div><div class="pex-sub">Read the traces, then rewrite the harness or the memory. Compounds every run, free of the model.</div></div>
-            <div class="pfoot caption">Compounding. Free of the model.</div>
-          </div>
+        <div class="ah-body">
+          <figure class="ah-fig">
+            <figcaption class="ah-tag caption">Automate work &middot; the goal</figcaption>
+            <img class="zoomable" src="goal.png" alt="What a goal adds to a thread: a goal holds objective, status, budget and usage as durable, thread-scoped state" />
+          </figure>
+          <figure class="ah-fig">
+            <figcaption class="ah-tag caption">Automate improvement &middot; meta-harness</figcaption>
+            <img class="zoomable" src="meta-harness.webp" alt="The meta-harness search loop: an agent reads a filesystem of prior candidates, traces and scores, proposes a new harness, it is evaluated on held-out tasks, logs are stored, and the loop repeats" />
+          </figure>
         </div>
-        <div class="split-foot"><b>Auto harness:</b> a smaller model that synthesizes a custom harness, or the whole policy, can outperform a much larger model, and at lower cost. <b>arxiv.org/abs/2603.03329</b></div>
+        <div class="split-foot"><b>Auto harness:</b> a smaller model that synthesizes a custom harness, or the whole policy, can outperform a much larger model, and at lower cost. <b>arxiv.org/abs/2603.03329</b> &middot; click a diagram to zoom.</div>
       </div>
-      <div class="pagenum">06 / 8</div>
+      <div class="pagenum"></div>
     </section>
 
     <!-- 13. COLOPHON / CLOSE ───────────────────────────────────── -->
@@ -1191,6 +1193,7 @@
     current = i;
   }
   document.addEventListener('keydown', (e) => {
+    if (document.querySelector('.zoom-overlay')) { if (e.key === 'Escape') document.querySelector('.zoom-overlay').remove(); return; }
     if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); show(current + 1); }
     else if (e.key === 'ArrowLeft' || e.key === 'PageUp')               { e.preventDefault(); show(current - 1); }
     else if (e.key === 'Home')                                            { e.preventDefault(); show(0); }
@@ -1203,6 +1206,14 @@
     const dx = e.changedTouches[0].clientX - tx;
     if (Math.abs(dx) > 40) show(current + (dx < 0 ? 1 : -1));
     tx = null;
+  });
+  document.querySelectorAll('.zoomable').forEach(function(im){
+    im.addEventListener('click', function(){
+      var ov = document.createElement('div'); ov.className = 'zoom-overlay';
+      var big = document.createElement('img'); big.src = im.currentSrc || im.src; ov.appendChild(big);
+      ov.addEventListener('click', function(){ ov.remove(); });
+      document.body.appendChild(ov);
+    });
   });
 </script>
 

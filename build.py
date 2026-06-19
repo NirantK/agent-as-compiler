@@ -19,6 +19,8 @@ vid_b64   = b64(ROOT / "anshuc-video-web.mp4")
 loop_b64  = b64(ROOT / "loopcraft.jpg")  # actually a PNG despite the extension
 about_b64 = b64(ROOT / "about-frame.jpg")
 ul_b64    = b64(ROOT / "usage-limit.jpeg")
+goal_b64  = b64(ROOT / "goal.png")
+meta_b64  = b64(ROOT / "meta-harness.webp")
 
 EXTRA_CSS = """
   /* ─── OPENING — harness engineering is ancient ─── */
@@ -256,6 +258,8 @@ deck = deck.replace('src="anshuc-video-web.mp4"', 'src="data:video/mp4;base64,' 
 deck = deck.replace('src="loopcraft.jpg"', 'src="data:image/png;base64,' + loop_b64 + '"')
 deck = deck.replace('src="about-frame.jpg"', 'src="data:image/jpeg;base64,' + about_b64 + '"')
 deck = deck.replace('src="usage-limit.jpeg"', 'src="data:image/jpeg;base64,' + ul_b64 + '"')
+deck = deck.replace('src="goal.png"', 'src="data:image/png;base64,' + goal_b64 + '"')
+deck = deck.replace('src="meta-harness.webp"', 'src="data:image/webp;base64,' + meta_b64 + '"')
 deck = deck.replace("<title>Act II · Coding Agents Are Compilers · Loopcraft</title>",
                     "<title>The Agent as Compiler</title>", 1)
 
