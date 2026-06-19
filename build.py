@@ -33,16 +33,16 @@ EXTRA_CSS = """
   .s-open .pagenum { color: var(--paper); opacity: 0.6; }
   .s-open .open-img img { border: 1.5px solid var(--paper); border-radius: 3px; background:#fff; }
   .s-open .open-frame { position: absolute; inset: clamp(76px, 8vh, 130px) clamp(36px, 3.6vw, 80px) clamp(90px, 9vh, 140px); display: grid; grid-template-columns: 1.08fr 0.92fr; gap: clamp(32px, 5vw, 90px); align-items: center; z-index: 5; }
-  .s-open .oeyebrow { font-family: 'Hanken Grotesk', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em; font-size: clamp(12px, 0.95vw, 15px); color: var(--ink); margin-bottom: clamp(18px, 2.4vh, 34px); }
+  .s-open .oeyebrow { font-family: 'Hanken Grotesk', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em; font-size: clamp(14px, 0.95vw, 16px); color: var(--ink); margin-bottom: clamp(18px, 2.4vh, 34px); }
   .s-open .otitle { font-family: 'Newsreader', Georgia, serif; font-weight: 400; font-size: clamp(40px, min(5vw, 8.4vh), 96px); line-height: 1.0; letter-spacing: -0.006em; color: var(--ink); margin: 0; }
   .s-open .osub { font-family: 'Hanken Grotesk', sans-serif; font-size: clamp(15px, 1.05vw, 19px); line-height: 1.5; color: var(--ink); max-width: 42ch; margin-top: clamp(20px, 2.6vh, 38px); }
   .s-open .open-img { display: flex; align-items: center; justify-content: center; }
   .s-open .open-img img { max-width: 100%; max-height: 52vh; object-fit: contain; display: block; }
   .s-open .open-img { flex-direction: column; gap: clamp(10px, 1.4vh, 18px); }
-  .s-open .ocap { align-self: center; text-align: center; font-family: 'Hanken Grotesk', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em; font-size: clamp(10px, 0.78vw, 13px); color: var(--ink); opacity: 0.55; }
+  .s-open .ocap { align-self: center; text-align: center; font-family: 'Hanken Grotesk', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em; font-size: clamp(14px, 0.78vw, 16px); color: var(--ink); opacity: 0.55; }
   .s-open .obyline { margin-top: clamp(22px, 3vh, 44px); padding-top: clamp(12px, 1.6vh, 20px); border-top: 1.5px solid var(--ink); }
   .s-open .oname { font-family: 'Newsreader', Georgia, serif; font-size: clamp(20px, 1.9vw, 34px); color: var(--ink); }
-  .s-open .ometa { font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(12px, 0.9vw, 15px); color: var(--ink); opacity: 0.7; letter-spacing: 0.04em; margin-top: 4px; }
+  .s-open .ometa { font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(14px, 0.9vw, 16px); color: var(--ink); opacity: 0.7; letter-spacing: 0.04em; margin-top: 4px; }
 
   /* ─── ACT I — DEBT OVERLAY (click/key reveal, no opacity blend) ─── */
   .s-overlay { background: var(--paper); }
@@ -53,20 +53,20 @@ EXTRA_CSS = """
   .s-overlay .figure .ov { z-index: 2; opacity: 0; transition: opacity 520ms ease; }
   .s-overlay .figure.revealed .ov { opacity: 1; }
   .s-overlay .ov-controls { display: flex; align-items: center; gap: clamp(12px, 2vw, 28px); flex-wrap: wrap; border-top: 1.5px solid var(--ink); padding-top: clamp(10px, 1.3vh, 18px); }
-  .s-overlay .pill { font-family: 'DM Mono', monospace; font-size: clamp(11px, 0.82vw, 13px); border: 1.5px solid var(--ink); border-radius: 2px; padding: 6px 13px; cursor: pointer; background: var(--paper); color: var(--ink); letter-spacing: 0.04em; }
+  .s-overlay .pill { font-family: 'DM Mono', monospace; font-size: clamp(14px, 0.82vw, 16px); border: 1.5px solid var(--ink); border-radius: 2px; padding: 6px 13px; cursor: pointer; background: var(--paper); color: var(--ink); letter-spacing: 0.04em; }
   .s-overlay .pill.on { background: var(--ink); color: var(--paper); }
-  .s-overlay .ov-hint { font-family: 'DM Mono', monospace; font-size: clamp(10px, 0.78vw, 13px); opacity: 0.55; letter-spacing: 0.04em; margin-left: auto; }
+  .s-overlay .ov-hint { font-family: 'DM Mono', monospace; font-size: clamp(14px, 0.78vw, 16px); opacity: 0.55; letter-spacing: 0.04em; margin-left: auto; }
 
   /* ─── ABOUT credentials strip ─── */
   .s-about .cred { margin-top: clamp(16px, 2.2vh, 30px); padding-top: clamp(12px, 1.6vh, 20px); border-top: 1.5px solid var(--ink); display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px clamp(16px, 2vw, 32px); }
-  .s-about .cred .cred-lab { font-family: 'Hanken Grotesk', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em; font-size: clamp(11px, 0.82vw, 13px); color: var(--ink); opacity: 0.6; }
-  .s-about .cred .ci { font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(11px, 0.86vw, 14px); color: var(--ink); }
+  .s-about .cred .cred-lab { font-family: 'Hanken Grotesk', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em; font-size: clamp(14px, 0.82vw, 16px); color: var(--ink); opacity: 0.6; }
+  .s-about .cred .ci { font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(14px, 0.86vw, 16px); color: var(--ink); }
   .s-about .about-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 1.4fr 0.6fr; gap: clamp(26px, 3.2vw, 64px); align-items: stretch; margin-top: clamp(14px, 2vh, 28px); }
   .s-about .about-main { display: flex; flex-direction: column; min-height: 0; justify-content: center; }
   .s-about .about-main .about-lead { margin-top: 0; }
   .s-about .about-fig { display: flex; flex-direction: column; min-height: 0; gap: clamp(8px, 1.2vh, 14px); }
   .s-about .about-fig img { flex: 1; min-height: 0; width: 100%; object-fit: cover; object-position: 46% 26%; border: 1.5px solid var(--ink); border-radius: 3px; display: block; }
-  .s-about .about-cap { font-family: 'Hanken Grotesk', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; font-size: clamp(10px, 0.78vw, 13px); color: var(--ink); opacity: 0.55; text-align: right; }
+  .s-about .about-cap { font-family: 'Hanken Grotesk', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; font-size: clamp(14px, 0.78vw, 16px); color: var(--ink); opacity: 0.55; text-align: right; }
 
   /* opening cobalt: color overrides LAST so they beat the .s-open base rules */
   .s-open .oeyebrow, .s-open .otitle, .s-open .osub, .s-open .oname { color: var(--paper); }
