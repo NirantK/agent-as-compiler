@@ -336,6 +336,17 @@
   .s-reward .pdiag { max-width: clamp(220px, 19vw, 282px); }
   .s-reward .pdiag text { font-family: 'DM Mono', ui-monospace, monospace; font-size: 10px; fill: var(--ink); text-anchor: middle; }
   .s-reward .pdiag .rlab { fill: var(--amber); }
+  .s-flywheel .fw-body { flex:1; min-height:0; display:grid; grid-template-columns: 1fr 1fr; gap: clamp(26px,3.2vw,64px); align-items:center; margin-top: clamp(14px,2vh,28px); }
+  .s-flywheel .fw-text { display:flex; flex-direction:column; gap: clamp(13px,1.9vh,24px); }
+  .s-flywheel .fw-lead { font-family:'Newsreader',Georgia,serif; font-size: clamp(24px, min(2.8vw,4.8vh), 48px); line-height:1.05; letter-spacing:-0.005em; color:var(--ink); }
+  .s-flywheel .fw-mid { font-family:'Hanken Grotesk',sans-serif; font-size: clamp(15px,1.05vw,18px); line-height:1.5; color:var(--ink); max-width:44ch; }
+  .s-flywheel .fw-close { font-family:'Newsreader',Georgia,serif; font-size: clamp(17px, min(1.9vw,3.2vh), 28px); line-height:1.2; color:var(--ink); max-width:36ch; }
+  .s-flywheel .fw-close .hl { color:var(--amber); font-style:italic; }
+  .s-flywheel .fw-fig { display:flex; align-items:center; justify-content:center; min-height:0; height:100%; }
+  .s-flywheel .fw-fig svg { width:100%; max-width: clamp(340px,34vw,520px); height:auto; }
+  .s-flywheel .fw-fig .fwlbl { font-family:'Hanken Grotesk',sans-serif; font-weight:700; font-size:14px; fill:var(--ink); text-anchor:middle; }
+  .s-flywheel .fw-fig .fwsub { font-family:'DM Mono',ui-monospace,monospace; font-size:10px; fill:var(--amber); text-anchor:middle; }
+  .s-flywheel .fw-fig .fwleg { font-family:'DM Mono',ui-monospace,monospace; font-size:10.5px; }
 </style>
 </head>
 <body>
@@ -758,21 +769,7 @@
       <div class="pagenum">05 / 8</div>
     </section>
 
-    <!-- LOOPS — swyx Loopcraft (quote + diagram) -->
-<section class="slide s-pq with-fig hairlines">
-      <div class="pq-frame">
-        <div class="pq-fig">
-          <img src="loopcraft.jpg" alt="swyx's Loopcraft diagram: nested loops from tokens to turns to tasks to teams" />
-        </div>
-        <div class="pq-col">
-          <div class="pq-mark" aria-hidden="true">&#8220;</div>
-          <div class="pq-kicker">@swyx &middot; Loopcraft: the art of stacking loops</div>
-          <p class="pq-body med">One might argue the entire game of the next century is to stack loops as effectively as possible. It is valuable to know when to go <span class="hl">DOWN</span> a loop when things go wrong, but more valuable to know how to go <span class="hl">UP</span> a loop as models improve. If you don't figure this out, don't be salty when you lose to those who do.</p>
-          <div class="pq-attr"><span class="pq-name">@swyx</span><span class="pq-role">latent.space/p/ainews-loopcraft-the-art-of-stacking</span></div>
-        </div>
-      </div>
-      <div class="pagenum">Act III</div>
-    </section>
+
 
 
 
@@ -969,6 +966,67 @@
           </div>
         </div>
         <div class="split-foot">Most real systems need both: the output check from a domain expert, the trajectory eval from a dedicated engineer. Process reward model survey: arxiv.org/abs/2510.08049.</div>
+      </div>
+      <div class="pagenum"></div>
+    </section>
+
+    <!-- REWARDS — environments + diversity flywheel -->
+    <section class="slide s-flywheel hairlines">
+      <div class="topframe">
+        <div class="topbar">
+          <div class="h">Environments are the flywheel.</div>
+          <div class="lab-tag caption">Diverse traces improve the general model</div>
+        </div>
+        <div class="fw-body">
+          <div class="fw-text">
+            <div class="fw-lead">Specialize a general model into a harness for each environment.</div>
+            <div class="fw-mid">Each one brings its own config and skills, runs, and leaves traces. Those traces improve both the specialized model and the general one.</div>
+            <div class="fw-close"><span class="hl">The general model gains most from diversity</span>, pulling more tasks into its distribution and interpolating the rest.</div>
+          </div>
+          <div class="fw-fig">
+            <svg viewBox="0 0 500 420" fill="none" aria-label="One general model specialized into many environment harnesses; diverse traces flow back and improve the general model">
+              <g stroke="#1F2BE0" stroke-width="1.6">
+                <line x1="250" y1="76" x2="250" y2="181"/>
+                <line x1="250" y1="241" x2="250" y2="344"/>
+                <line x1="324" y1="211" x2="358" y2="211"/>
+                <line x1="176" y1="211" x2="142" y2="211"/>
+              </g>
+              <g fill="#1F2BE0">
+                <path d="M244,84 L256,84 L250,76 Z"/>
+                <path d="M244,336 L256,336 L250,344 Z"/>
+                <path d="M350,205 L350,217 L358,211 Z"/>
+                <path d="M150,205 L150,217 L142,211 Z"/>
+              </g>
+              <g fill="#B07814">
+                <path d="M244,173 L256,173 L250,181 Z"/>
+                <path d="M244,249 L256,249 L250,241 Z"/>
+                <path d="M332,205 L332,217 L324,211 Z"/>
+                <path d="M168,205 L168,217 L176,211 Z"/>
+              </g>
+              <rect x="180" y="185" width="140" height="52" rx="4" fill="#F0EBDE" stroke="#1F2BE0" stroke-width="2"/>
+              <text class="fwlbl" x="250" y="208">General model</text>
+              <text class="fwsub" x="250" y="226">interpolates</text>
+              <g fill="#F0EBDE" stroke="#1F2BE0" stroke-width="1.6">
+                <rect x="200" y="32" width="100" height="40" rx="4"/>
+                <rect x="362" y="190" width="116" height="42" rx="4"/>
+                <rect x="200" y="348" width="100" height="40" rx="4"/>
+                <rect x="22" y="190" width="116" height="42" rx="4"/>
+              </g>
+              <g class="fwlbl">
+                <text x="250" y="57">Coding</text>
+                <text x="420" y="216">Support</text>
+                <text x="250" y="373">Research</text>
+                <text x="80" y="216">Ops</text>
+              </g>
+              <g>
+                <line x1="20" y1="406" x2="40" y2="406" stroke="#1F2BE0" stroke-width="2"/>
+                <text class="fwleg" x="46" y="410" fill="#1F2BE0">specialize: config + skills</text>
+                <path d="M258,402 L270,402 L264,410 Z" fill="#B07814"/>
+                <text class="fwleg" x="278" y="410" fill="#B07814">diverse traces</text>
+              </g>
+            </svg>
+          </div>
+        </div>
       </div>
       <div class="pagenum"></div>
     </section>
